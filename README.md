@@ -10,6 +10,9 @@
 
 ---
 
+> **팀원이라면 [`TEAM-SETUP.md`](TEAM-SETUP.md) 를 먼저 볼 것.**
+> 설치 단계별 안내와 자주 막히는 지점 해결법이 정리돼 있다.
+
 ## 빠른 시작
 
 ```powershell
@@ -53,7 +56,9 @@ Docker를 쓸 수 있으면 `docker compose up -d` 한 줄로도 된다 (가상�
 | `alembic/` | 스키마 마이그레이션 |
 | `tools/` | 환경 점검 · 인코딩 검사 |
 | `docs/DB-PHASE1.md` | **스키마 설계 근거** — 왜 이렇게 짰는지 |
+| `TEAM-SETUP.md` | **팀원 설치 가이드** — 단계별 안내 + 문제 해결 |
 | `RUN-API.md` | 서버 실행과 마이그레이션 방법 |
+| `GIT-SETUP.md` | git 협업 규칙 |
 | `CLAUDE.md` | 프로젝트 규칙 (Claude Code가 읽는다) |
 
 ---
