@@ -1,0 +1,51 @@
+# Subject R — DB 로컬 개발 스택
+#
+#   docker compose up -d        DB 기동 (이것만 하면 된다)
+#   docker compose ps           상태 확인 — db가 healthy여야 정상
+#   docker compose down         종료 (데이터 유지)
+#   docker compose down -v      초기화 (데이터 삭제 후 스키마부터 재실행)
+#
+# MinIO는 2차(AI 학습 이미지 저장) 전까지 필요 없어서 기본 기동에서 뺐다.
+# 나중에 쓸 때:  docker compose --profile storage up -d
+
+services:
+  db:
+    image: postgis/postgis:16-3.4       # 순정 postgres 이미지에는 PostGIS가 없다
+    container_name: sbr-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-robot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-devpass}
+      POSTGRES_DB: ${POSTGRES_DB:-robotdb}
+      TZ: UTC                           # 컨테이너 시각을 UTC로 고정
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      # DB 최초 기동 시 파일명 순서대로 자동 실행된다 (001 -> 002)
+      - ./schema:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-robot} -d ${POSTGRES_DB:-robotdb}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  # --- 2차에서 사용 (지금은 뜨지 않는다) ---
+  minio:
+    image: minio/minio:latest
+    container_name: sbr-minio
+    profiles: ["storage"]
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin123}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+
+volumes:
+  db_data:
+  minio_data:

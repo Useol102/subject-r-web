@@ -1,0 +1,27 @@
+# --- 웹 프레임워크 ---
+fastapi
+uvicorn[standard]
+python-multipart          # 파일 업로드(multipart/form-data) 처리에 필수
+
+# --- DB ---
+sqlalchemy>=2.0
+psycopg[binary]           # psycopg3. psycopg2-binary 아님
+geoalchemy2               # PostGIS geometry 컬럼용
+alembic                   # 마이그레이션
+
+# --- 설정 / 검증 ---
+pydantic>=2
+pydantic-settings         # .env 읽기
+
+# --- 인증 ---
+bcrypt                    # 비밀번호 해싱
+pyjwt                     # 로그인 토큰
+
+# --- 객체 저장소 ---
+boto3                     # MinIO(S3 호환) 업로드
+
+# --- 개발/테스트 ---
+pytest
+pytest-asyncio
+httpx                     # FastAPI 테스트 클라이언트
+ruff                      # 린터 + 포매터

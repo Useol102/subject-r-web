@@ -1,0 +1,16 @@
+# 팀원마다 OS가 다를 수 있으므로 줄바꿈을 git이 정규화하게 한다.
+# 이게 없으면 파일을 안 고쳤는데도 전체 줄이 바뀐 것처럼 나오는 diff가 생긴다.
+* text=auto eol=lf
+
+# Windows 전용 스크립트는 CRLF로 유지한다
+*.ps1  text eol=crlf
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+
+# 바이너리 (SLAM 지도 파일 등)
+*.png  binary
+*.pgm  binary
+*.jpg  binary
+*.pdf  binary
+*.xlsx binary
+*.hwpx binary
