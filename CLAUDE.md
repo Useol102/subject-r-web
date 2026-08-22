@@ -33,7 +33,8 @@ Jetson Orin Nano + ROS2 Humble + Nav2 + SLAM Toolbox + YOLOv8n으로 돌아간�
 | ORM | SQLAlchemy 2.0 (`Mapped[]` 스타일) + GeoAlchemy2 |
 | 마이그레이션 | Alembic |
 | DB 드라이버 | **psycopg3** — 연결 문자열은 `postgresql+psycopg://` |
-| 인증 | bcrypt (passlib 쓰지 말 것) + PyJWT |
+| 인증 | bcrypt (passlib 쓰지 말 것) + PyJWT. 역할 위계 admin > staff > viewer |
+| 인증 범위 | 관리(쓰기) API만 보호. 키오스크·로봇 경로는 열려 있다 (LAN 전제) |
 | 프론트 | React 18 + TypeScript + Vite |
 | 실내 지도 표시 | Leaflet `CRS.Simple` (위경도 기반 지도 API 쓰지 말 것) |
 | 배포 | Docker Compose (클라우드 없이 어디서든 동일 재현) |
@@ -94,7 +95,8 @@ Jetson Orin Nano + ROS2 Humble + Nav2 + SLAM Toolbox + YOLOv8n으로 돌아간�
 설계 문서는 이 순서로 이어진다:
 `REQUIREMENTS.md` → `SCREEN-FLOW.md` → `FEATURES.md` → `ERD.md` → 코드
 
-**새 API를 만들 때는 `FEATURES.md` 의 기능 ID를 커밋 메시지에 적는다** (예: `feat(S-09): ...`).
+**새 API를 만들 때는 `FEATURES.md` 의 기능 이름표를 커밋 메시지에 적는다**
+(예: `feat(직원-목적지편집): ...`). 이름표는 `역할-기능` 형태다.
 그래야 "이 API 왜 있지"를 나중에 추적할 수 있다.
 
 `docs/REQUIREMENTS.md` 에 사용자·화면흐름·기록범위와 **미결정 사항**이 정리돼 있다.

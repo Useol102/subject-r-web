@@ -12,11 +12,20 @@
 > 안 하면 Anaconda Prompt 창을 따로 열어야 한다. 우리 스크립트는 전부 PowerShell용이라
 > 창을 오가는 게 번거롭다. `.venv`는 폴더 하나로 끝나고, 지울 때도 폴더만 지우면 된다.
 
-Alembic 기준점을 찍는다 (`init-db.ps1`로 DB를 만든 직후 한 번만):
+Alembic 기준점을 찍고, 첫 관리자 계정을 만든다 (DB를 만든 직후 한 번만):
 
 ```powershell
 alembic stamp head
+.\.venv\Scripts\python.exe tools\create_admin.py
 ```
+
+관리자 계정이 없으면 목적지 편집 같은 관리 API를 쓸 수 없다.
+시드 데이터는 계정을 만들지 않는다 — 가짜 해시가 든 admin이 모든 설치에 남는 걸 막기 위해서다.
+
+### `/docs` 에서 인증하기
+
+Swagger UI 오른쪽 위 **Authorize** 버튼 → `POST /auth/login` 으로 받은
+`access_token` 을 입력하면 이후 요청에 자동으로 붙는다.
 
 ## 실행
 
@@ -58,6 +67,11 @@ Python 버전 / 패키지 / .env / DB 접속 / PostGIS / 테이블 수 / 시드 
 
 | 메서드 | 경로 | 용도 |
 |---|---|---|
+| POST | `/auth/login` | 로그인 (토큰 발급) |
+| GET | `/auth/me` | 내 정보 |
+| POST | `/auth/change-password` | 비밀번호 변경 |
+| GET/POST | `/users` | 계정 목록·추가 (admin) |
+| DELETE | `/users/{id}` | 계정 비활성화 (admin) |
 | GET | `/health` | DB + PostGIS 살아있는지 |
 | GET | `/maps` | 지도 버전 목록 |
 | GET | `/maps/{id}` | 지도 하나 |

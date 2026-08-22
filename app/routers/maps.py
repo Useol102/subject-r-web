@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app import models, schemas
 from app.db import get_db
+from app.deps import require_role
 from app.geo import polygon_coords, xy
 
 router = APIRouter(prefix="/maps", tags=["maps"])
@@ -59,6 +60,8 @@ def get_map(map_id: int, db: Session = Depends(get_db)):
 def list_pois(map_id: int, db: Session = Depends(get_db), all_pois: bool = False):
     """사용자 UI의 목적지 목록.
 
+    **인증 없이 열려 있다.** 로봇 터치스크린(키오스크)이 로그인 없이 써야 한다.
+
     기본은 is_selectable=true인 것만 준다 (충전 스테이션 등은 빠진다).
     ?all_pois=true 면 목록 비노출 대상까지 포함한다. 숨긴 것(is_active=false)은 제외.
     """
@@ -67,10 +70,11 @@ def list_pois(map_id: int, db: Session = Depends(get_db), all_pois: bool = False
     return _poi_rows(db, map_id, only_selectable=not all_pois)
 
 
-@router.get("/{map_id}/pois/admin", response_model=list[schemas.PoiAdminOut])
+@router.get("/{map_id}/pois/admin", response_model=list[schemas.PoiAdminOut],
+            dependencies=[Depends(require_role("staff"))])
 def list_pois_admin(map_id: int, db: Session = Depends(get_db),
                     include_inactive: bool = True):
-    """S-09 관리 화면용 목적지 목록.
+    """`직원-목적지편집` — 관리 화면용 목적지 목록.
 
     숨긴 목적지(is_active=false)까지 보여준다. 그래야 다시 켤 수 있다.
     사용자용 목록과 응답 형태가 다르다 — 운영 필드가 더 들어간다.
@@ -100,10 +104,11 @@ def list_pois_admin(map_id: int, db: Session = Depends(get_db),
     ]
 
 
-@router.patch("/{map_id}/pois/order", response_model=list[schemas.PoiOut])
+@router.patch("/{map_id}/pois/order", response_model=list[schemas.PoiOut],
+              dependencies=[Depends(require_role("staff"))])
 def reorder_pois(map_id: int, body: schemas.PoiReorder,
                  db: Session = Depends(get_db)):
-    """S-09 목적지 표시 순서 일괄 변경 (관리 화면에서 드래그 정렬).
+    """`직원-목적지편집` — 표시 순서 일괄 변경 (관리 화면에서 드래그 정렬).
 
     자주 쓰는 목적지를 위로 올리는 용도. 노인 사용성과 직결된다.
     """
@@ -128,6 +133,9 @@ def reorder_pois(map_id: int, body: schemas.PoiReorder,
 @router.get("/{map_id}/bundle", response_model=schemas.MapBundle)
 def get_bundle(map_id: int, response: Response, db: Session = Depends(get_db)):
     """로봇이 오프라인 주행용으로 받아가는 일괄 데이터.
+
+    **인증 없이 열려 있다.** 로봇 전용 인증은 아직 없다 (`로봇-상태보고` 만들 때 함께 다룬다).
+    지금은 LAN 안에서만 접근 가능하다는 전제에 기대고 있다.
 
     복지관에 인터넷이 없어도 로봇이 돌아야 하므로,
     지도 메타 + 목적지 + 금지구역 + 경로 그래프를 한 번에 내려준다.

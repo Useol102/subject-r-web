@@ -1,4 +1,4 @@
-"""목적지(POI) 관리 API — 기능 S-09, S-10.
+"""목적지(POI) 관리 API — 기능 `직원-목적지편집`, `직원-음성문구편집`.
 
 관리자가 웹에서 목적지를 추가·수정·숨김하고 음성 문구를 편집한다.
 이게 없으면 복지관 장소명이 바뀔 때마다 SQL을 직접 쳐야 한다.
@@ -15,9 +15,12 @@ from sqlalchemy.orm import Session
 
 from app import enums, models, schemas
 from app.db import get_db
+from app.deps import require_role
 from app.geo import point
 
-router = APIRouter(prefix="/pois", tags=["pois (관리)"])
+# 목적지 편집은 직원 이상만. 어르신 키오스크는 읽기만 하므로 여기 오지 않는다.
+router = APIRouter(prefix="/pois", tags=["pois (관리)"],
+                   dependencies=[Depends(require_role("staff"))])
 
 ACTIVE_TRIP = (enums.TripStatus.requested, enums.TripStatus.navigating,
                enums.TripStatus.paused)
@@ -69,7 +72,7 @@ def get_poi(poi_id: int, db: Session = Depends(get_db)):
 
 @router.post("", response_model=schemas.PoiAdminOut, status_code=201)
 def create_poi(body: schemas.PoiCreate, db: Session = Depends(get_db)):
-    """S-09 목적지 추가."""
+    """`직원-목적지편집` — 목적지 추가."""
     m = db.get(models.Map, body.map_id)
     if not m:
         raise HTTPException(404, f"map {body.map_id} 없음")
@@ -97,7 +100,7 @@ def create_poi(body: schemas.PoiCreate, db: Session = Depends(get_db)):
 
 @router.patch("/{poi_id}", response_model=schemas.PoiAdminOut)
 def update_poi(poi_id: int, body: schemas.PoiUpdate, db: Session = Depends(get_db)):
-    """S-09 목적지 수정 / S-10 음성 문구 편집.
+    """`직원-목적지편집` 수정 / `직원-음성문구편집`.
 
     보내지 않은 필드는 그대로 둔다.
     """
@@ -134,7 +137,7 @@ def update_poi(poi_id: int, body: schemas.PoiUpdate, db: Session = Depends(get_d
 
 @router.delete("/{poi_id}", response_model=schemas.PoiAdminOut)
 def hide_poi(poi_id: int, db: Session = Depends(get_db)):
-    """S-09 목적지 숨김.
+    """`직원-목적지편집` — 목적지 숨김.
 
     물리 삭제가 아니다. 과거 trip이 이 POI를 참조하므로 지우면 통계가 깨진다.
     진행 중인 안내의 목적지면 거부한다.

@@ -97,6 +97,42 @@ class PoiReorder(BaseModel):
     items: list[PoiOrderItem]
 
 
+# ---------------------------------------------------------------- 인증
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+class TokenOut(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    expires_in_minutes: int
+    user: "UserOut"
+
+
+class UserOut(ORMBase):
+    id: int
+    email: str
+    display_name: str
+    role: enums.UserRole
+    facility_id: int | None = None
+    is_active: bool
+    last_login_at: dt.datetime | None = None
+
+
+class UserCreate(BaseModel):
+    email: str
+    password: str = Field(min_length=8, description="8자 이상")
+    display_name: str
+    role: enums.UserRole = enums.UserRole.viewer
+    facility_id: int | None = None
+
+
+class PasswordChange(BaseModel):
+    current_password: str
+    new_password: str = Field(min_length=8)
+
+
 # ---------------------------------------------------------------- Zone
 class ZoneOut(ORMBase):
     id: int

@@ -54,10 +54,10 @@ INSERT INTO robot (serial, name, model, current_map_id, status, battery_pct, las
 SELECT 'SBR-0001', '토리', 'jetson-orin-nano-4wd', m.id, 'idle', 87, now()
 FROM map m WHERE m.is_active;
 
-INSERT INTO app_user (email, hashed_password, display_name, role, facility_id)
-SELECT 'admin@example.com', '$2b$12$devplaceholderhashvalue000000000000000000000000000000',
-       '관리자', 'admin', id
-FROM facility WHERE code = 'demo-welfare';
+-- 관리자 계정은 시드로 만들지 않는다.
+-- 가짜 해시가 든 admin 계정이 모든 설치에 남는 것은 위험하다.
+-- 첫 관리자는 아래 명령으로 만든다:
+--     .\.venv\Scripts\python.exe tools\create_admin.py
 
 -- 샘플 trip 1건 (완료 상태)
 INSERT INTO trip (robot_id, map_id, mode, status, origin_poi_id, dest_poi_id,

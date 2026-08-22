@@ -127,7 +127,28 @@ def main() -> int:
         except Exception:
             pass
 
-        # 9) Alembic
+        # 9) 관리자 계정
+        try:
+            n_admin = c.execute(text(
+                "SELECT count(*) FROM app_user WHERE role='admin' AND is_active"
+            )).scalar()
+            seed = c.execute(text(
+                "SELECT count(*) FROM app_user WHERE email='admin@example.com'"
+            )).scalar()
+            if seed:
+                line(WARN, "관리자 계정", "시드가 만든 admin@example.com 이 남아있다")
+                problems.append("남은 시드 계정 정리:  "
+                                "psql -d robotdb -c \"DELETE FROM app_user "
+                                "WHERE email='admin@example.com'\"")
+            elif n_admin:
+                line(OK, "관리자 계정", f"admin {n_admin}명")
+            else:
+                line(WARN, "관리자 계정", "없다 — 관리 API를 쓸 수 없다")
+                problems.append(".\\.venv\\Scripts\\python.exe tools\\create_admin.py")
+        except Exception:
+            pass
+
+        # 10) Alembic
         try:
             rev = c.execute(text("SELECT version_num FROM alembic_version")).scalar()
             line(OK, "Alembic", f"현재 리비전 {rev}")
