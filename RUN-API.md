@@ -65,6 +65,12 @@ Python 버전 / 패키지 / .env / DB 접속 / PostGIS / 테이블 수 / 시드 
 | GET | `/maps/{id}/pois?all_pois=true` | 관리자용 전체 목록 |
 | GET | `/maps/{id}/bundle` | **로봇 오프라인 캐시** (지도+POI+구역+경로) |
 | GET | `/robots`, `/robots/{id}` | 로봇 목록/상세 |
+| GET | `/maps/{id}/pois/admin` | **관리용 목적지 목록** (숨긴 것 포함) |
+| PATCH | `/maps/{id}/pois/order` | 목적지 표시 순서 일괄 변경 |
+| POST | `/pois` | 목적지 추가 |
+| PATCH | `/pois/{id}` | 목적지 수정 · 음성 문구 편집 |
+| DELETE | `/pois/{id}` | 목적지 숨김 (물리 삭제 아님) |
+| POST | `/pois/{id}/restore` | 숨긴 목적지 복구 |
 | GET/POST | `/trips` | 안내 요청 조회/생성 |
 | PATCH | `/trips/{id}` | 상태 변경 (started_at/ended_at 자동 기록) |
 | POST/GET | `/trips/{id}/events` | 로봇이 사건 보고 / 조회 |

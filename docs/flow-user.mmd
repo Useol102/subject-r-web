@@ -1,0 +1,19 @@
+flowchart TD
+    IDLE([대기 화면]) -->|화면 터치| LIST[목적지 선택<br/>큰 버튼 6~8개]
+    LIST -->|버튼 선택| CONF{확인<br/>화장실로 안내할까요?}
+    CONF -->|아니요| LIST
+    CONF -->|네| NAV[안내 중<br/>남은 거리 · 큰 취소 버튼]
+    NAV -->|취소 누름| CANCEL[취소되었습니다]
+    NAV -->|장애물·오류| ERR[잠시만요<br/>직원 호출]
+    NAV -->|목적지 도착| ARR[도착 안내<br/>음성 + 화면]
+    ARR -->|5초 후| FB{만족도<br/>얼굴 3개}
+    FB -->|선택| IDLE
+    FB -->|건너뛰기| IDLE
+    CANCEL --> IDLE
+    ERR -->|해결| NAV
+    ERR -->|포기| IDLE
+
+    style IDLE fill:#e8f0fe
+    style CONF fill:#fff4e5
+    style FB fill:#fff4e5
+    style ERR fill:#fde8e8

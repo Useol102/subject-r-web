@@ -89,6 +89,20 @@ Jetson Orin Nano + ROS2 Humble + Nav2 + SLAM Toolbox + YOLOv8n으로 돌아간�
 `check_encoding.py`는 실제로 두 번 터진 사고를 자동으로 잡는다:
 `alembic.ini`의 한글 주석, `psql -c` 인자의 한글, `.ps1`의 BOM 누락.
 
+## 요구분석
+
+설계 문서는 이 순서로 이어진다:
+`REQUIREMENTS.md` → `SCREEN-FLOW.md` → `FEATURES.md` → `ERD.md` → 코드
+
+**새 API를 만들 때는 `FEATURES.md` 의 기능 ID를 커밋 메시지에 적는다** (예: `feat(S-09): ...`).
+그래야 "이 API 왜 있지"를 나중에 추적할 수 있다.
+
+`docs/REQUIREMENTS.md` 에 사용자·화면흐름·기록범위와 **미결정 사항**이 정리돼 있다.
+`[제안]` 표시는 웹팀 의견일 뿐 확정이 아니다. 회의 결과에 따라 스키마가 바뀔 수 있다.
+
+1차 스키마는 회의록 기능 로드맵(①~⑨)에서 도출한 **초안**이다.
+요구사항이 확정되면 Alembic 마이그레이션으로 수정한다 — 버리고 다시 짜지 않는다.
+
 ## 작업 시작 전 읽을 것
 
 `docs/DB-PHASE1.md` — 1차 스키마의 전체 DDL, 컬럼별 설계 근거, 제약조건 검증 결과, 단계별 작업 지시가 들어 있다.

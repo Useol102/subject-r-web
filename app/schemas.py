@@ -31,6 +31,27 @@ class PoiOut(ORMBase):
     display_order: int
 
 
+class PoiAdminOut(ORMBase):
+    """관리 화면용. 사용자 화면(PoiOut)에는 없는 운영 필드까지 포함한다."""
+    id: int
+    map_id: int
+    code: str
+    name_ko: str
+    name_short: str | None = None
+    category: enums.PoiCategory
+    x: float
+    y: float
+    approach_yaw: float | None = None
+    voice_script: str | None = None
+    voice_file_uri: str | None = None
+    wheelchair_accessible: bool
+    is_selectable: bool
+    is_active: bool
+    display_order: int
+    created_at: dt.datetime
+    updated_at: dt.datetime
+
+
 class PoiCreate(BaseModel):
     map_id: int
     code: str
@@ -42,8 +63,38 @@ class PoiCreate(BaseModel):
     approach_yaw: float | None = None
     voice_script: str | None = None
     wheelchair_accessible: bool = True
+    voice_file_uri: str | None = None
     is_selectable: bool = True
     display_order: int = 0
+
+
+class PoiUpdate(BaseModel):
+    """부분 수정. 보내지 않은 필드는 건드리지 않는다.
+
+    map_id는 없다 — POI를 다른 지도로 옮기는 것은 좌표계가 달라 의미가 없다.
+    """
+    code: str | None = None
+    name_ko: str | None = None
+    name_short: str | None = None
+    category: enums.PoiCategory | None = None
+    x: float | None = None
+    y: float | None = None
+    approach_yaw: float | None = None
+    voice_script: str | None = None
+    voice_file_uri: str | None = None
+    wheelchair_accessible: bool | None = None
+    is_selectable: bool | None = None
+    display_order: int | None = None
+
+
+class PoiOrderItem(BaseModel):
+    poi_id: int
+    display_order: int
+
+
+class PoiReorder(BaseModel):
+    """목록 순서 일괄 변경. 관리 화면에서 드래그로 정렬할 때 쓴다."""
+    items: list[PoiOrderItem]
 
 
 # ---------------------------------------------------------------- Zone

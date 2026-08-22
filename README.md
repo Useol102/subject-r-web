@@ -55,6 +55,11 @@ Docker를 쓸 수 있으면 `docker compose up -d` 한 줄로도 된다 (가상�
 | `app/routers/` | API 엔드포인트 |
 | `alembic/` | 스키마 마이그레이션 |
 | `tools/` | 환경 점검 · 인코딩 검사 |
+| `docs/REQUIREMENTS.md` | **요구분석** — 누가 무엇을 하는지, 미결정 사항 |
+| `docs/SCREEN-FLOW.md` | 화면 흐름도 (어르신 / 직원) |
+| `docs/FEATURES.md` | **기능 목록 36개 + 구현 상태 대조표** |
+| `docs/ERD.md` | **ERD 다이어그램** — 테이블 관계도 (GitHub에서 그림으로 보임) |
+| `docs/ERD.dbml` | dbdiagram.io 붙여넣기용 |
 | `docs/DB-PHASE1.md` | **스키마 설계 근거** — 왜 이렇게 짰는지 |
 | `TEAM-SETUP.md` | **팀원 설치 가이드** — 단계별 안내 + 문제 해결 |
 | `RUN-API.md` | 서버 실행과 마이그레이션 방법 |

@@ -10,7 +10,7 @@ from sqlalchemy import text
 
 from app.config import settings
 from app.db import engine
-from app.routers import maps, robots, trips
+from app.routers import maps, pois, robots, trips
 
 app = FastAPI(
     title="Subject R — 베리어프리 안내 로봇 API",
@@ -31,6 +31,7 @@ app.add_middleware(
 )
 
 app.include_router(maps.router)
+app.include_router(pois.router)
 app.include_router(robots.router)
 app.include_router(trips.router)
 

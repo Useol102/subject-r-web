@@ -1,0 +1,149 @@
+erDiagram
+    facility {
+        bigint id PK
+        text code
+        text name
+        text address
+        smallint floor_count
+        text contact_name
+        text contact_phone
+        text note
+        timestamptz created_at
+        timestamptz updated_at
+        timestamptz deleted_at
+    }
+    map {
+        bigint id PK
+        bigint facility_id FK
+        smallint floor
+        int version
+        text name
+        text pgm_uri
+        text yaml_uri
+        float resolution_m
+        float origin_x
+        float origin_y
+        float origin_yaw
+        int width_px
+        int height_px
+        text slam_method
+        bool is_active
+        timestamptz created_at
+        timestamptz updated_at
+    }
+    poi {
+        bigint id PK
+        bigint map_id FK
+        text code
+        text name_ko
+        text name_short
+        poi_category category
+        geometry geom
+        float approach_yaw
+        text voice_script
+        text voice_file_uri
+        bool wheelchair_accessible
+        bool is_selectable
+        smallint display_order
+        bool is_active
+        timestamptz created_at
+        timestamptz updated_at
+    }
+    zone {
+        bigint id PK
+        bigint map_id FK
+        text name
+        zone_type zone_type
+        geometry geom
+        float speed_limit_mps
+        smallint priority
+        bool is_active
+        timestamptz created_at
+        timestamptz updated_at
+    }
+    route_edge {
+        bigint id PK
+        bigint map_id FK
+        bigint from_poi_id FK
+        bigint to_poi_id FK
+        float distance_m
+        bool is_bidirectional
+        float slope_pct
+        bool has_step
+        float min_width_m
+        bool is_active
+        timestamptz created_at
+        timestamptz updated_at
+    }
+    robot {
+        bigint id PK
+        uuid uuid
+        text serial
+        text name
+        text model
+        bigint current_map_id FK
+        robot_status status
+        smallint battery_pct
+        timestamptz last_seen_at
+        text firmware_version
+        text note
+        timestamptz created_at
+        timestamptz updated_at
+        timestamptz deleted_at
+    }
+    app_user {
+        bigint id PK
+        citext email
+        text hashed_password
+        text display_name
+        user_role role
+        bigint facility_id FK
+        bool is_active
+        timestamptz last_login_at
+        timestamptz created_at
+        timestamptz updated_at
+    }
+    trip {
+        bigint id PK
+        uuid uuid
+        bigint robot_id FK
+        bigint map_id FK
+        trip_mode mode
+        trip_status status
+        bigint origin_poi_id FK
+        bigint dest_poi_id FK
+        trip_requester requested_by
+        bigint requested_by_user_id FK
+        bool is_simulated
+        timestamptz requested_at
+        timestamptz started_at
+        timestamptz ended_at
+        float planned_distance_m
+        float actual_distance_m
+        text abort_reason
+        timestamptz created_at
+        timestamptz updated_at
+    }
+    trip_event {
+        bigint id PK
+        bigint trip_id FK
+        timestamptz ts
+        trip_event_type event_type
+        smallint severity
+        geometry geom
+        jsonb payload
+        timestamptz created_at
+    }
+
+    facility ||--o{ map : "기관 1곳에 지도 버전 여럿"
+    map ||--o{ poi : "지도 1개에 목적지 여럿"
+    map ||--o{ zone : "지도 1개에 구역 여럿"
+    map ||--o{ route_edge : "지도 1개에 경로 여럿"
+    poi ||--o{ route_edge : "POI를 잇는 간선"
+    map ||--o{ robot : "로봇이 보는 현재 지도"
+    robot ||--o{ trip : "로봇 1대가 여러 안내"
+    map ||--o{ trip : "안내가 일어난 지도"
+    poi ||--o{ trip : "출발지·목적지"
+    app_user ||--o{ trip : "직원이 요청한 경우"
+    trip ||--o{ trip_event : "안내 1건에 사건 여럿"
+    facility ||--o{ app_user : "소속 기관"

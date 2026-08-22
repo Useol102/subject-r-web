@@ -14,13 +14,16 @@ from app.geo import polygon_coords, xy
 router = APIRouter(prefix="/maps", tags=["maps"])
 
 
-def _poi_rows(db: Session, map_id: int, only_selectable: bool):
+def _poi_rows(db: Session, map_id: int, only_selectable: bool,
+              include_inactive: bool = False):
     x, y = xy(models.Poi.geom)
     stmt = (
         select(models.Poi, x.label("x"), y.label("y"))
-        .where(models.Poi.map_id == map_id, models.Poi.is_active.is_(True))
+        .where(models.Poi.map_id == map_id)
         .order_by(models.Poi.display_order, models.Poi.name_ko)
     )
+    if not include_inactive:
+        stmt = stmt.where(models.Poi.is_active.is_(True))
     if only_selectable:
         stmt = stmt.where(models.Poi.is_selectable.is_(True))
     out = []
@@ -57,11 +60,69 @@ def list_pois(map_id: int, db: Session = Depends(get_db), all_pois: bool = False
     """사용자 UI의 목적지 목록.
 
     기본은 is_selectable=true인 것만 준다 (충전 스테이션 등은 빠진다).
-    관리자 화면에서 전부 보려면 ?all_pois=true.
+    ?all_pois=true 면 목록 비노출 대상까지 포함한다. 숨긴 것(is_active=false)은 제외.
     """
     if not db.get(models.Map, map_id):
         raise HTTPException(404, f"map {map_id} 없음")
     return _poi_rows(db, map_id, only_selectable=not all_pois)
+
+
+@router.get("/{map_id}/pois/admin", response_model=list[schemas.PoiAdminOut])
+def list_pois_admin(map_id: int, db: Session = Depends(get_db),
+                    include_inactive: bool = True):
+    """S-09 관리 화면용 목적지 목록.
+
+    숨긴 목적지(is_active=false)까지 보여준다. 그래야 다시 켤 수 있다.
+    사용자용 목록과 응답 형태가 다르다 — 운영 필드가 더 들어간다.
+    """
+    if not db.get(models.Map, map_id):
+        raise HTTPException(404, f"map {map_id} 없음")
+    x, y = xy(models.Poi.geom)
+    stmt = (
+        select(models.Poi, x, y)
+        .where(models.Poi.map_id == map_id)
+        .order_by(models.Poi.display_order, models.Poi.name_ko)
+    )
+    if not include_inactive:
+        stmt = stmt.where(models.Poi.is_active.is_(True))
+    return [
+        schemas.PoiAdminOut(
+            id=p.id, map_id=p.map_id, code=p.code, name_ko=p.name_ko,
+            name_short=p.name_short, category=p.category, x=px, y=py,
+            approach_yaw=p.approach_yaw, voice_script=p.voice_script,
+            voice_file_uri=p.voice_file_uri,
+            wheelchair_accessible=p.wheelchair_accessible,
+            is_selectable=p.is_selectable, is_active=p.is_active,
+            display_order=p.display_order,
+            created_at=p.created_at, updated_at=p.updated_at,
+        )
+        for p, px, py in db.execute(stmt).all()
+    ]
+
+
+@router.patch("/{map_id}/pois/order", response_model=list[schemas.PoiOut])
+def reorder_pois(map_id: int, body: schemas.PoiReorder,
+                 db: Session = Depends(get_db)):
+    """S-09 목적지 표시 순서 일괄 변경 (관리 화면에서 드래그 정렬).
+
+    자주 쓰는 목적지를 위로 올리는 용도. 노인 사용성과 직결된다.
+    """
+    if not db.get(models.Map, map_id):
+        raise HTTPException(404, f"map {map_id} 없음")
+
+    ids = [i.poi_id for i in body.items]
+    owned = set(db.scalars(
+        select(models.Poi.id).where(models.Poi.map_id == map_id,
+                                    models.Poi.id.in_(ids))
+    ).all())
+    missing = [i for i in ids if i not in owned]
+    if missing:
+        raise HTTPException(400, f"이 지도에 속하지 않는 poi: {missing}")
+
+    for item in body.items:
+        db.get(models.Poi, item.poi_id).display_order = item.display_order
+    db.commit()
+    return _poi_rows(db, map_id, only_selectable=False)
 
 
 @router.get("/{map_id}/bundle", response_model=schemas.MapBundle)

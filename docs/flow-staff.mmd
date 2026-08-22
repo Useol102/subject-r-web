@@ -1,0 +1,22 @@
+flowchart TD
+    LOGIN[로그인] --> DASH[대시보드<br/>지도 위 로봇 위치 · 배터리 · 상태]
+
+    DASH --> HIST[안내 이력<br/>날짜별 목록 · 성공 실패]
+    DASH --> POI[목적지 관리]
+    DASH --> ZONE[구역 관리]
+    DASH --> MAPM[지도 관리]
+    DASH --> ACC[계정 관리]
+
+    DASH -->|대신 요청| REQ[안내 요청 생성]
+    DASH -->|문제 발생| STOP[원격 취소]
+
+    HIST --> DETAIL[안내 상세<br/>경로 · 사건 타임라인]
+    DETAIL --> HEAT[장애물 다발 지점<br/>지도 히트맵]
+
+    POI --> POIEDIT[추가 · 수정 · 숨김<br/>음성 문구 편집]
+    ZONE --> ZONEEDIT[진입금지 · 서행 구역 그리기]
+    MAPM --> MAPUP[새 SLAM 지도 업로드<br/>활성 버전 전환]
+
+    style LOGIN fill:#e8f0fe
+    style DASH fill:#e6f4ea
+    style HEAT fill:#fff4e5
