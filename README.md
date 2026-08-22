@@ -13,8 +13,8 @@
 ## 빠른 시작
 
 ```powershell
-git clone <이 저장소>
-cd "Subject R"
+git clone https://github.com/Useol102/subject-r-web.git
+cd subject-r-web
 
 .\setup-windows.ps1          # PostgreSQL + Git + Node 설치 (없는 것만)
 #   -> 이어서 Stack Builder 로 PostGIS Bundle 설치 (필수)
