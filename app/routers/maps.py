@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app import models, schemas
 from app.db import get_db
-from app.deps import require_role
+from app.deps import require_role, robot_or_role
 from app.geo import polygon_coords, xy
 
 router = APIRouter(prefix="/maps", tags=["maps"])
@@ -40,7 +40,8 @@ def _poi_rows(db: Session, map_id: int, only_selectable: bool,
     return out
 
 
-@router.get("", response_model=list[schemas.MapOut])
+@router.get("", response_model=list[schemas.MapOut],
+            dependencies=[Depends(robot_or_role("viewer"))])
 def list_maps(db: Session = Depends(get_db), active_only: bool = False):
     stmt = select(models.Map).order_by(models.Map.floor, models.Map.version.desc())
     if active_only:
@@ -48,7 +49,8 @@ def list_maps(db: Session = Depends(get_db), active_only: bool = False):
     return db.scalars(stmt).all()
 
 
-@router.get("/{map_id}", response_model=schemas.MapOut)
+@router.get("/{map_id}", response_model=schemas.MapOut,
+            dependencies=[Depends(robot_or_role("viewer"))])
 def get_map(map_id: int, db: Session = Depends(get_db)):
     m = db.get(models.Map, map_id)
     if not m:
@@ -56,11 +58,13 @@ def get_map(map_id: int, db: Session = Depends(get_db)):
     return m
 
 
-@router.get("/{map_id}/pois", response_model=list[schemas.PoiOut])
+@router.get("/{map_id}/pois", response_model=list[schemas.PoiOut],
+            dependencies=[Depends(robot_or_role("viewer"))])
 def list_pois(map_id: int, db: Session = Depends(get_db), all_pois: bool = False):
     """사용자 UI의 목적지 목록.
 
-    **인증 없이 열려 있다.** 로봇 터치스크린(키오스크)이 로그인 없이 써야 한다.
+    키오스크는 로봇 위에서 돌아가므로 **로봇 키(X-Robot-Key)** 로 접근한다.
+    직원 대시보드는 로그인 토큰으로 접근한다.
 
     기본은 is_selectable=true인 것만 준다 (충전 스테이션 등은 빠진다).
     ?all_pois=true 면 목록 비노출 대상까지 포함한다. 숨긴 것(is_active=false)은 제외.
@@ -130,12 +134,12 @@ def reorder_pois(map_id: int, body: schemas.PoiReorder,
     return _poi_rows(db, map_id, only_selectable=False)
 
 
-@router.get("/{map_id}/bundle", response_model=schemas.MapBundle)
+@router.get("/{map_id}/bundle", response_model=schemas.MapBundle,
+            dependencies=[Depends(robot_or_role("viewer"))])
 def get_bundle(map_id: int, response: Response, db: Session = Depends(get_db)):
     """로봇이 오프라인 주행용으로 받아가는 일괄 데이터.
 
-    **인증 없이 열려 있다.** 로봇 전용 인증은 아직 없다 (`로봇-상태보고` 만들 때 함께 다룬다).
-    지금은 LAN 안에서만 접근 가능하다는 전제에 기대고 있다.
+    로봇 키(X-Robot-Key) 또는 로그인 토큰이 필요하다.
 
     복지관에 인터넷이 없어도 로봇이 돌아야 하므로,
     지도 메타 + 목적지 + 금지구역 + 경로 그래프를 한 번에 내려준다.

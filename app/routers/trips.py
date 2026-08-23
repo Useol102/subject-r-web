@@ -8,9 +8,13 @@ from sqlalchemy.orm import Session
 
 from app import enums, models, schemas
 from app.db import get_db
+from app.deps import robot_or_role
 from app.geo import point, xy
 
-router = APIRouter(prefix="/trips", tags=["trips"])
+# 키오스크는 로봇 위에서 돌아가므로 로봇 키를 쓴다.
+# 직원 대시보드도 같은 엔드포인트를 쓰므로 둘 다 허용한다.
+router = APIRouter(prefix="/trips", tags=["trips"],
+                   dependencies=[Depends(robot_or_role("viewer"))])
 
 ACTIVE = (enums.TripStatus.requested, enums.TripStatus.navigating, enums.TripStatus.paused)
 

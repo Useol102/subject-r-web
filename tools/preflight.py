@@ -148,7 +148,22 @@ def main() -> int:
         except Exception:
             pass
 
-        # 10) Alembic
+        # 10) 로봇 API 키
+        try:
+            total = c.execute(text("SELECT count(*) FROM robot WHERE deleted_at IS NULL")).scalar()
+            keyed = c.execute(text(
+                "SELECT count(*) FROM robot WHERE deleted_at IS NULL AND api_key_hash IS NOT NULL"
+            )).scalar()
+            if total and keyed < total:
+                line(WARN, "로봇 API 키", f"{total}대 중 {keyed}대만 발급됨")
+                problems.append("로봇이 서버에 보고하려면 키가 필요하다. "
+                                "관리자로 로그인 후 POST /robots/{id}/api-key")
+            elif total:
+                line(OK, "로봇 API 키", f"{keyed}/{total}대 발급됨")
+        except Exception:
+            pass
+
+        # 11) Alembic
         try:
             rev = c.execute(text("SELECT version_num FROM alembic_version")).scalar()
             line(OK, "Alembic", f"현재 리비전 {rev}")

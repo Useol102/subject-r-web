@@ -198,6 +198,40 @@ class RobotOut(ORMBase):
     status: enums.RobotStatus
     battery_pct: int | None = None
     last_seen_at: dt.datetime | None = None
+    is_stale: bool = Field(
+        default=False,
+        description="마지막 보고가 오래돼 연결이 끊긴 것으로 보이는 상태",
+    )
+    has_api_key: bool = Field(default=False, description="API 키 발급 여부")
+
+
+class RobotApiKeyOut(BaseModel):
+    """키 발급 응답. **평문 키는 이때 한 번만 나온다.**"""
+    robot_id: int
+    serial: str
+    api_key: str = Field(description="이 값은 다시 볼 수 없다. 로봇에 바로 저장할 것")
+    issued_at: dt.datetime
+    warning: str = "이 키는 다시 표시되지 않는다. 잃어버리면 재발급해야 한다."
+
+
+class RobotStatusIn(BaseModel):
+    """로봇이 주기적으로 보내는 상태 보고."""
+    status: enums.RobotStatus | None = None
+    battery_pct: int | None = Field(default=None, ge=0, le=100)
+    current_map_id: int | None = None
+    firmware_version: str | None = None
+
+
+class RobotSelfOut(ORMBase):
+    """로봇이 자기 정보를 확인할 때. 사람용 목록과 다르다."""
+    id: int
+    uuid: str
+    serial: str
+    name: str
+    status: enums.RobotStatus
+    battery_pct: int | None = None
+    current_map_id: int | None = None
+    server_time: dt.datetime = Field(description="로봇 시계 보정용 서버 UTC 시각")
 
 
 # ---------------------------------------------------------------- Trip

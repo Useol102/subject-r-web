@@ -184,6 +184,9 @@ class Robot(Base):
     last_seen_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))
     firmware_version: Mapped[str | None] = mapped_column(Text)
     note: Mapped[str | None] = mapped_column(Text)
+    # 로봇 API 키. 평문은 저장하지 않는다 (발급 시 한 번만 보여준다).
+    api_key_hash: Mapped[str | None] = mapped_column(Text, unique=True)
+    api_key_issued_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     deleted_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))

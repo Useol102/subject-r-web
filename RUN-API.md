@@ -22,6 +22,27 @@ alembic stamp head
 관리자 계정이 없으면 목적지 편집 같은 관리 API를 쓸 수 없다.
 시드 데이터는 계정을 만들지 않는다 — 가짜 해시가 든 admin이 모든 설치에 남는 걸 막기 위해서다.
 
+### 로봇 키 발급
+
+로봇이 서버에 보고하려면 키가 필요하다. 관리자로 로그인한 뒤:
+
+```
+POST /robots/1/api-key
+```
+
+응답의 `api_key` 는 **이때 한 번만 나온다.** 서버는 해시만 저장하므로 다시 볼 수 없다.
+로봇(Jetson)의 설정 파일에 바로 넣을 것. 잃어버리면 재발급하면 되고, 재발급하면 이전 키는 즉시 무효가 된다.
+
+로봇 쪽 호출 예:
+
+```
+GET  /robots/me            헤더: X-Robot-Key: sbr_...
+POST /robots/me/status     헤더: X-Robot-Key: sbr_...   본문: {"status":"driving","battery_pct":73}
+```
+
+본문을 비워 보내도 된다 — 그러면 순수 heartbeat가 되어 `last_seen_at` 만 갱신된다.
+`ROBOT_STALE_SECONDS`(기본 60초) 동안 보고가 없으면 대시보드에서 `is_stale=true` 로 보인다.
+
 ### `/docs` 에서 인증하기
 
 Swagger UI 오른쪽 위 **Authorize** 버튼 → `POST /auth/login` 으로 받은
@@ -71,6 +92,10 @@ Python 버전 / 패키지 / .env / DB 접속 / PostGIS / 테이블 수 / 시드 
 | GET | `/auth/me` | 내 정보 |
 | POST | `/auth/change-password` | 비밀번호 변경 |
 | GET/POST | `/users` | 계정 목록·추가 (admin) |
+| POST | `/robots/{id}/api-key` | **로봇 API 키 발급** (admin, 평문은 1회만) |
+| DELETE | `/robots/{id}/api-key` | 키 폐기 (admin) |
+| GET | `/robots/me` | 로봇이 자기 확인 + 서버 시각 동기화 |
+| POST | `/robots/me/status` | **로봇 상태·배터리 보고** (heartbeat) |
 | DELETE | `/users/{id}` | 계정 비활성화 (admin) |
 | GET | `/health` | DB + PostGIS 살아있는지 |
 | GET | `/maps` | 지도 버전 목록 |

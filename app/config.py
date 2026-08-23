@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "CHANGE_ME"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 480
 
+    # 이 시간 동안 보고가 없으면 대시보드에서 "연결 끊김"으로 본다
+    ROBOT_STALE_SECONDS: int = 60
+
     # 로봇 터치스크린 / 대시보드가 붙을 주소
     CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://localhost:3000"]
 
