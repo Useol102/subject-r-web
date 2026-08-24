@@ -187,6 +187,11 @@ class Robot(Base):
     # 로봇 API 키. 평문은 저장하지 않는다 (발급 시 한 번만 보여준다).
     api_key_hash: Mapped[str | None] = mapped_column(Text, unique=True)
     api_key_issued_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))
+    # 가장 최근 위치. 덮어쓴다 — 과거 궤적은 3차 pose_log가 담당한다.
+    # 이걸 분리한 덕에 로그 주기(Hz) 확정 전에도 대시보드와 진행 상황이 동작한다.
+    last_geom: Mapped[object | None] = mapped_column(
+        Geometry("POINT", srid=0, spatial_index=False))
+    last_heading_rad: Mapped[float | None] = mapped_column(Double)
     created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     deleted_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))

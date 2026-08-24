@@ -40,6 +40,15 @@ GET  /robots/me            헤더: X-Robot-Key: sbr_...
 POST /robots/me/status     헤더: X-Robot-Key: sbr_...   본문: {"status":"driving","battery_pct":73}
 ```
 
+위치를 함께 보내면 최신 위치가 갱신된다:
+
+```
+{"status":"driving","battery_pct":70,"x":9.0,"y":3.6,"heading_rad":0.14}
+```
+
+이 값으로 `GET /robots` 의 지도 표시와 `GET /trips/{id}/progress` 의 남은 거리가 계산된다.
+**덮어쓰기이므로 과거 궤적은 남지 않는다** — 그건 3차 `pose_log` 의 몫이다.
+
 본문을 비워 보내도 된다 — 그러면 순수 heartbeat가 되어 `last_seen_at` 만 갱신된다.
 `ROBOT_STALE_SECONDS`(기본 60초) 동안 보고가 없으면 대시보드에서 `is_stale=true` 로 보인다.
 

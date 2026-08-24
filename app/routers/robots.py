@@ -16,12 +16,14 @@ from app import models, schemas
 from app.config import settings
 from app.db import get_db
 from app.deps import get_current_robot, require_role
+from app.geo import point, xy
 from app.security import generate_api_key, hash_api_key
 
 router = APIRouter(prefix="/robots", tags=["robots"])
 
 
-def _out(r: models.Robot, now: dt.datetime) -> schemas.RobotOut:
+def _out(r: models.Robot, now: dt.datetime,
+         x: float | None = None, y: float | None = None) -> schemas.RobotOut:
     stale = (
         r.last_seen_at is None
         or (now - r.last_seen_at).total_seconds() > settings.ROBOT_STALE_SECONDS
@@ -31,6 +33,7 @@ def _out(r: models.Robot, now: dt.datetime) -> schemas.RobotOut:
         current_map_id=r.current_map_id, status=r.status,
         battery_pct=r.battery_pct, last_seen_at=r.last_seen_at,
         is_stale=stale, has_api_key=bool(r.api_key_hash),
+        x=x, y=y, heading_rad=r.last_heading_rad,
     )
 
 
@@ -65,6 +68,11 @@ def report_status(body: schemas.RobotStatusIn,
         robot.battery_pct = body.battery_pct
     if body.firmware_version is not None:
         robot.firmware_version = body.firmware_version
+    # 위치는 x, y 가 함께 와야 의미가 있다
+    if body.x is not None and body.y is not None:
+        robot.last_geom = point(body.x, body.y)
+    if body.heading_rad is not None:
+        robot.last_heading_rad = body.heading_rad
 
     robot.last_seen_at = dt.datetime.now(dt.timezone.utc)
     db.commit()
@@ -83,21 +91,26 @@ def report_status(body: schemas.RobotStatusIn,
 def list_robots(db: Session = Depends(get_db)):
     """`직원-로봇상태` 대시보드용 목록."""
     now = dt.datetime.now(dt.timezone.utc)
-    rows = db.scalars(
-        select(models.Robot)
+    rx, ry = xy(models.Robot.last_geom)
+    rows = db.execute(
+        select(models.Robot, rx, ry)
         .where(models.Robot.deleted_at.is_(None))
         .order_by(models.Robot.serial)
     ).all()
-    return [_out(r, now) for r in rows]
+    return [_out(r, now, x, y) for r, x, y in rows]
 
 
 @router.get("/{robot_id}", response_model=schemas.RobotOut,
             dependencies=[Depends(require_role("viewer"))])
 def get_robot(robot_id: int, db: Session = Depends(get_db)):
-    r = db.get(models.Robot, robot_id)
-    if not r or r.deleted_at:
+    rx, ry = xy(models.Robot.last_geom)
+    row = db.execute(
+        select(models.Robot, rx, ry).where(models.Robot.id == robot_id)
+    ).one_or_none()
+    if row is None or row[0].deleted_at:
         raise HTTPException(404, f"robot {robot_id} 없음")
-    return _out(r, dt.datetime.now(dt.timezone.utc))
+    r, x, y = row
+    return _out(r, dt.datetime.now(dt.timezone.utc), x, y)
 
 
 @router.post("/{robot_id}/api-key", response_model=schemas.RobotApiKeyOut,

@@ -2,11 +2,12 @@
 import datetime as dt
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app import enums, models, schemas
+from app.config import settings
 from app.db import get_db
 from app.deps import robot_or_role
 from app.geo import point, xy
@@ -122,6 +123,61 @@ def add_event(trip_id: int, body: schemas.TripEventIn, db: Session = Depends(get
     return schemas.TripEventOut(
         id=e.id, ts=e.ts, event_type=e.event_type, severity=e.severity,
         x=ex, y=ey, payload=e.payload,
+    )
+
+
+@router.get("/{trip_id}/progress", response_model=schemas.TripProgressOut)
+def get_progress(trip_id: int, db: Session = Depends(get_db)):
+    """`사용자-진행상황` — 어르신 화면의 "얼마나 남았나".
+
+    로봇이 보고한 최신 위치와 목적지 좌표로 남은 직선거리를 계산한다.
+    PostGIS가 하는 일이므로 애플리케이션에서 거리 공식을 쓰지 않는다.
+    """
+    t = db.get(models.Trip, trip_id)
+    if not t:
+        raise HTTPException(404, f"trip {trip_id} 없음")
+
+    robot = db.get(models.Robot, t.robot_id)
+    rx, ry = xy(models.Robot.last_geom)
+    pos = db.execute(
+        select(rx, ry).where(models.Robot.id == t.robot_id)
+    ).one_or_none()
+    robot_x, robot_y = (pos if pos else (None, None))
+
+    dest_name = None
+    remaining = None
+    if t.dest_poi_id:
+        dest = db.get(models.Poi, t.dest_poi_id)
+        if dest:
+            dest_name = dest.name_short or dest.name_ko
+            if robot_x is not None:
+                remaining = db.scalar(
+                    select(func.ST_Distance(models.Robot.last_geom, models.Poi.geom))
+                    .where(models.Robot.id == t.robot_id,
+                           models.Poi.id == t.dest_poi_id)
+                )
+
+    pct = None
+    if remaining is not None and t.planned_distance_m:
+        done = 1.0 - (remaining / t.planned_distance_m)
+        pct = max(0, min(100, round(done * 100)))
+    if t.status in (enums.TripStatus.arrived, enums.TripStatus.completed):
+        pct = 100
+
+    now = dt.datetime.now(dt.timezone.utc)
+    stale = (
+        robot is None or robot.last_seen_at is None
+        or (now - robot.last_seen_at).total_seconds() > settings.ROBOT_STALE_SECONDS
+    )
+
+    return schemas.TripProgressOut(
+        trip_id=t.id, status=t.status,
+        dest_poi_id=t.dest_poi_id, dest_name=dest_name,
+        robot_x=robot_x, robot_y=robot_y,
+        remaining_m=round(remaining, 2) if remaining is not None else None,
+        planned_distance_m=t.planned_distance_m,
+        progress_pct=pct, is_stale=stale,
+        updated_at=robot.last_seen_at if robot else None,
     )
 
 

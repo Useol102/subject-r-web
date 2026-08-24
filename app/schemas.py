@@ -203,6 +203,9 @@ class RobotOut(ORMBase):
         description="마지막 보고가 오래돼 연결이 끊긴 것으로 보이는 상태",
     )
     has_api_key: bool = Field(default=False, description="API 키 발급 여부")
+    x: float | None = Field(default=None, description="최신 위치 (지도 원점 기준 미터)")
+    y: float | None = None
+    heading_rad: float | None = None
 
 
 class RobotApiKeyOut(BaseModel):
@@ -215,11 +218,18 @@ class RobotApiKeyOut(BaseModel):
 
 
 class RobotStatusIn(BaseModel):
-    """로봇이 주기적으로 보내는 상태 보고."""
+    """로봇이 주기적으로 보내는 상태 보고.
+
+    x, y 를 같이 보내면 최신 위치가 갱신된다 (덮어쓴다).
+    과거 궤적은 저장하지 않는다 — 그건 3차 `pose_log` 의 몫이다.
+    """
     status: enums.RobotStatus | None = None
     battery_pct: int | None = Field(default=None, ge=0, le=100)
     current_map_id: int | None = None
     firmware_version: str | None = None
+    x: float | None = Field(default=None, description="지도 원점 기준 미터")
+    y: float | None = None
+    heading_rad: float | None = Field(default=None, description="진행 방향(라디안)")
 
 
 class RobotSelfOut(ORMBase):
@@ -232,6 +242,29 @@ class RobotSelfOut(ORMBase):
     battery_pct: int | None = None
     current_map_id: int | None = None
     server_time: dt.datetime = Field(description="로봇 시계 보정용 서버 UTC 시각")
+
+
+class TripProgressOut(BaseModel):
+    """`사용자-진행상황` — 어르신 화면의 '얼마나 남았나'.
+
+    remaining_m 은 **직선거리**다. 실제 주행 경로가 아니다.
+    화면에 진행 막대를 그리는 데는 충분하고, 정확한 경로 거리는
+    로봇의 Nav2가 알고 있으므로 필요해지면 로봇이 직접 보내면 된다.
+    """
+    trip_id: int
+    status: enums.TripStatus
+    dest_poi_id: int | None = None
+    dest_name: str | None = None
+    robot_x: float | None = None
+    robot_y: float | None = None
+    remaining_m: float | None = Field(default=None, description="목적지까지 직선거리")
+    planned_distance_m: float | None = None
+    progress_pct: int | None = Field(
+        default=None, ge=0, le=100,
+        description="planned_distance_m 가 있을 때만 계산된다")
+    is_stale: bool = Field(default=False, description="로봇 보고가 끊긴 상태")
+    updated_at: dt.datetime | None = Field(
+        default=None, description="로봇이 마지막으로 보고한 시각")
 
 
 # ---------------------------------------------------------------- Trip
