@@ -36,6 +36,7 @@
 | `README.md` | ✅ 빠른 시작 |
 | `docs/PITFALLS.md` | ✅ 인코딩·환경 함정 (머리말에 현재 유효한 항목 표시) |
 | `GIT-SETUP.md` | ✅ git 협업 규칙 |
+| `docs/ERD-현행.dbml` | ✅ **현행 스키마** (테이블 5개). `web_api/models.py` 기준. [dbdiagram.io](https://dbdiagram.io) 에 붙여넣으면 그림이 나온다 |
 | `docs/ERD.dbml` `docs/ERD.md` | 🟡 **DB 설계 초안 v2** (테이블 23개). 아직 코드에 반영 안 됨. 스키마를 바꿀 땐 여기부터 고친다 |
 | `docs/archive/*` | ⛔ 옛 계획 (안내 로봇 중심, PostgreSQL). 목록은 `docs/archive/README.md` |
 
