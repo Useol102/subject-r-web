@@ -1,110 +1,153 @@
-# CLAUDE.md — Subject R 웹 / 데이터베이스
+# CLAUDE.md — Subject R 웹 (Claude Code 작업 시 유의사항)
 
-## 이 저장소의 범위
+> 이 파일은 **주의사항만** 담는다. 실제 작업 규칙은 이 저장소(`subject-r-web/`) 루트의 `AGENTS.md`,
+> 실행법과 현재 상태는 `docs/WEB-START.md` 에 있다. 셋 다 읽고 시작할 것.
+> 저장소 **바깥** 인수인계 폴더(`Subject-R/`)의 `AGENTS.md`·`docs/` 는 옛 PostgreSQL 계획이다. 따르지 말 것.
+>
+> 마지막 갱신: 2026-09-17
 
-베리어프리 이동 보조 자율주행 로봇 프로젝트에서 **웹사이트와 데이터베이스만** 담당한다.
+---
 
-| 담당한다 | 담당하지 않는다 |
+## ⚠️ 0. 이 저장소에는 **코드가 두 벌** 있다
+
+2026-09-17 에 프로젝트 방향이 바뀌면서, 예전 코드를 지우지 않고 남겨뒀다.
+**섞으면 안 된다.** 이게 이 저장소에서 제일 사고 나기 쉬운 지점이다.
+
+| | 폴더 | DB | 상태 |
+|---|---|---|---|
+| **현재** | `web_api/` `web_migrations/` `tests_web/` `web/` | **SQLite** | 여기서 작업한다 |
+| 예전 | `app/` `alembic/` `schema/` | PostgreSQL + PostGIS | **참고용. 실행하지 않는다** |
+
+- 설정 파일도 두 벌이다: **`web-alembic.ini`**(현재) / `alembic.ini`(예전).
+  `alembic` 명령에 **반드시 `-c web-alembic.ini` 를 붙인다.** 안 붙이면 예전 쪽이 돈다.
+- 예전 폴더를 **지우거나 SQLite 로 자동 변환하지 말 것.** 계획이 또 바뀔 수 있고,
+  PostGIS 좌표 설계는 나중에 자율주행이 붙을 때 다시 쓸 수 있다.
+- 파일을 고치기 전에 **경로가 `web_api/` 인지 `app/` 인지 먼저 확인할 것.**
+  `models.py`, `main.py`, `schemas.py` 는 **양쪽에 같은 이름으로 존재한다.**
+
+## ⚠️ 1. 옛 계획 문서는 `docs/archive/` 에 있다
+
+읽고 그대로 따르면 엉뚱한 걸 만들게 된다. (2026-09-17 정리)
+
+| 문서 | 기준 |
 |---|---|
-| 데이터베이스 설계·구축 | 로봇 제어 (ROS2, Nav2) |
-| 백엔드 API (FastAPI) | SLAM, 경로계획 |
-| 관리자 대시보드 | AI 모델 학습 |
-| 사용자 웹 UI | 하드웨어 |
+| `docs/WEB-START.md` | ✅ **현재 계획** |
+| `AGENTS.md` (이 저장소 루트) | ✅ **현재 규칙** |
+| `README.md` | ✅ 빠른 시작 |
+| `docs/PITFALLS.md` | ✅ 인코딩·환경 함정 (머리말에 현재 유효한 항목 표시) |
+| `GIT-SETUP.md` | ✅ git 협업 규칙 |
+| `docs/ERD.dbml` `docs/ERD.md` | 🟡 **DB 설계 초안 v2** (테이블 23개). 아직 코드에 반영 안 됨. 스키마를 바꿀 땐 여기부터 고친다 |
+| `docs/archive/*` | ⛔ 옛 계획 (안내 로봇 중심, PostgreSQL). 목록은 `docs/archive/README.md` |
 
-다른 팀 작업을 이 저장소에서 하지 말 것. 다른 팀과는 **API와 DB 스키마로만** 연결된다.
+**옛 문서를 근거로 제안하지 말 것.**
 
-## 로봇 쪽 맥락 (알고만 있으면 되는 것)
+## ⚠️ 2. 계획이 왜 바뀌었나 (되돌리자고 하지 말 것)
 
-복지관 실내에서 노인·휠체어 이용자를 목적지까지 안내하는 자율주행 로봇이다.
-Jetson Orin Nano + ROS2 Humble + Nav2 + SLAM Toolbox + YOLOv8n으로 돌아간다.
-로봇은 ROS2 브리지 노드를 통해 우리 API에 HTTP/WebSocket으로 접속한다.
-우리는 ROS를 직접 다루지 않는다.
+- 기관: **월계종합사회복지관**
+- 현장 판단: **복지관 내부가 협소해서** 로봇이 목적지까지 직접 안내하는 방식은 구현이 어렵다.
+- 그래서 **이동형 안내 중심 → 이동형 고령자 친화형 키오스크 중심**으로 전환했다.
+  자율주행은 버린 게 아니라 **보조 역할**로 내려갔다 (평소 로비 배치, 직원이 필요할 때 이동).
+- 웹 담당 범위: 프로그램 조회, 장소 길찾기, **바코드 출결**, **안내문 인쇄**, 직원 호출 화면, 서버.
 
-**중요 제약: 클라우드를 쓰지 않는다.** 인터넷이 끊긴 복지관에서 LAN만으로 동작해야 한다.
-따라서 로봇이 오프라인에서도 주행할 수 있도록 `GET /maps/{id}/bundle`로 지도·POI·구역을
-일괄 다운로드해 캐시하는 구조를 전제로 설계했다.
+### SQLite 는 팀 합의 사항이다
 
-## 기술 스택
+계획서 10번 기술 스택 표에 **"데이터 저장 = SQLite"** 로 명시돼 있고,
+**"변경 시 팀장·팀원 회의 후 변경 (임의 변경 불가)"** 이라고 못박혀 있다.
 
-| 영역 | 선택 |
+PostgreSQL 이 기술적으로 낫다고 판단되더라도 **혼자 되돌리지 말 것.**
+의견이 있으면 사용자에게 말하고, 팀 회의 안건으로 넘긴다.
+
+## ⚠️ 3. SQLite 라서 달라진 것
+
+- **`TIMESTAMPTZ` 가 없다.** 시각은 UTC 오프셋이 명시된 **ISO 8601 문자열**(`...Z`)로 저장한다.
+  화면 표시와 일자 집계는 **KST(Asia/Seoul)**. 이 둘을 섞으면 "오늘 일정"이 9시간 밀린다.
+- 부분 유니크 인덱스는 `sqlite_where=text(...)` 로 쓴다 (`web_api/models.py` 의 `uq_trip_robot_active` 참고).
+- 동시 쓰기가 약하다. 배치 작업은 한 트랜잭션으로 묶고, 긴 루프 안에서 커밋하지 않는다.
+
+## ⚠️ 4. 한글 윈도우 인코딩 (실제로 다 당해본 것들)
+
+`docs/PITFALLS.md` 에 증상까지 있다. 요약:
+
+- **`.ini` 는 순수 ASCII.** Alembic 이 locale(CP949)로 읽어서 한글 주석이 있으면 파싱이 터진다.
+  → `web-alembic.ini` 에 한글 주석 금지.
+- **`.ps1` 은 UTF-8 **with BOM**.** 없으면 PowerShell 5.1 이 CP949 로 읽는다.
+- `.py` `.md` `.ts` `.tsx` 는 한글 써도 된다.
+- 파일을 추가했으면 `python tools\check_encoding.py` 를 한 번 돌린다.
+
+## ⚠️ 5. 윈도우 경로 (사용자가 자주 막히는 지점)
+
+- venv 실행파일은 PATH 에 없다 → `.\.venv\Scripts\python.exe`
+- PowerShell 은 현재 폴더를 안 본다 → `.\start-web.ps1` 처럼 `.\` 를 붙인다
+- 사용자에게 명령을 안내할 때 **위 두 가지를 반영한 전체 형태로** 준다
+
+## ⚠️ 6. 바코드 스캐너 판별 로직을 화면 코드에 넣지 말 것
+
+스캐너는 **키보드 웨지(HID)** 라, 사람 타자와 구분하는 기준이 **글자 간 시간 간격 하나뿐**이다.
+이런 건 조용히 깨지고 수동 테스트로는 안 잡힌다.
+
+- 판별 로직은 `web/src/scanner.ts` 에 **DOM 을 모르는 순수 함수**로 둔다.
+- 바꾸면 `web/src/scanner.test.ts` 를 같이 고친다.
+- 경계값(50ms)을 건드릴 거면 **실제 스캐너로 재보고** 바꾼다. 감으로 바꾸지 말 것.
+
+## ⚠️ 7. 데모를 실제처럼 보이게 만들지 말 것
+
+`WEB_DEMO=true` 는 **아직 아무것도 연동 안 됐다**는 뜻이다.
+
+- 이동 상태를 **자동 완료로 위조하지 않는다.** `이동 시작 재현`·`도착 재현`은 UI 확인용이다.
+- 출결은 **`TEST-001` 만** 통과시킨다. 실제 회원번호·QR 원문을
+  **DB 에도 로그에도 남기지 않는다** (지금은 SHA-256 해시만 저장).
+- 화면에 "예시/체험"임을 계속 표시한다. 시연 때 현장에서 오해가 생기면 신뢰를 잃는다.
+
+## ⚠️ 8. 아직 못 받은 것 — 임의로 지어내지 말 것
+
+| 필요한 것 | 주는 곳 |
 |---|---|
-| 백엔드 | Python 3.11 + FastAPI |
-| DB | PostgreSQL 16 + PostGIS 3 (Docker) |
-| ORM | SQLAlchemy 2.0 (`Mapped[]` 스타일) + GeoAlchemy2 |
-| 마이그레이션 | Alembic |
-| DB 드라이버 | **psycopg3** — 연결 문자열은 `postgresql+psycopg://` |
-| 인증 | bcrypt (passlib 쓰지 말 것) + PyJWT. 역할 위계 admin > staff > viewer |
-| 인증 범위 | 관리(쓰기) API만 보호. 키오스크·로봇 경로는 열려 있다 (LAN 전제) |
-| 프론트 | React 18 + TypeScript + Vite |
-| 실내 지도 표시 | Leaflet `CRS.Simple` (위경도 기반 지도 API 쓰지 말 것) |
-| 배포 | Docker Compose (클라우드 없이 어디서든 동일 재현) |
-| Python 환경 | 프로젝트 폴더의 `.venv` (conda 쓰지 않는다) |
+| 실제 층·장소·안내 문구 | 기관 컨택 |
+| 실내 지도, 검증된 경로 | 시뮬레이션팀 |
+| 로봇 이동 API 규격 | 시뮬레이션팀 |
+| 기관 출결 API 규격 | 기관 |
+| 영수증 프린터 기종·용지 폭 | 기관 (현재는 `window.print()` 80mm 가정) |
 
-## 절대 규칙
+가짜 장소명이나 그럴듯한 API 스펙을 **만들어 넣지 말 것.** 자리표시자로 두고 사용자에게 알린다.
 
-- 시각은 전부 `TIMESTAMPTZ`, **UTC 저장**. KST 변환은 화면에서만.
-- 좌표는 `geometry(Point, 0)` — SLAM 지도 원점 기준 **미터 단위 로컬 좌표**. 위경도(4326) 금지.
-- 이미지·rosbag 같은 큰 파일은 **DB에 넣지 않는다** (`bytea` 금지). 파일은 객체 저장소, DB엔 경로 + sha256만.
-- 마스터 데이터는 물리 삭제 금지 — `is_active` / `deleted_at`.
-- 스키마 변경은 **반드시 Alembic**. `psql`에서 직접 `ALTER TABLE` 금지.
-- **`alembic.ini`에는 ASCII만 쓴다.** Alembic이 이 파일을 로캘 인코딩(CP949)으로 읽어서,
-  한글 주석을 넣으면 `configparser.ParsingError`로 죽는다. `.py`는 한글 주석 괜찮다.
-- **`psql -c "..."` 인자에도 한글을 쓰지 않는다.** 콘솔이 CP949로 넘기는데
-  `PGCLIENTENCODING=UTF8`과 어긋나 인코딩 에러가 난다. `.sql` 파일 안의 한글은 괜찮다.
-- Python은 3.11~3.13을 쓴다. 3.14는 일부 패키지 휠이 아직 없다.
-- PK는 `BIGINT GENERATED ALWAYS AS IDENTITY`. 외부 노출이 필요한 `robot`, `trip`만 `uuid` 컬럼 추가.
-
-## 용어 (혼동 방지)
-
-- **trip** — 안내 요청 1건. "mission", "task"라고 쓰지 말 것.
-- **POI** — 사용자가 화면에서 고르는 목적지.
-- **map** — SLAM으로 만든 지도의 **한 버전**. 다시 돌리면 새 레코드.
-- **zone** — 진입금지·서행 구역.
-
-## 현재 진행 상황
-
-- ✅ 1차 테이블 9개 설계·검증 완료 (Docker / Windows 네이티브 양쪽에서 확인)
-- ✅ SQLAlchemy 2.0 모델 — `alembic revision --autogenerate`가 빈 diff를 내는 것까지 확인 (모델 == DB)
-- ✅ FastAPI 뼈대 + API 10개 엔드포인트 (실제 기동해서 응답 확인)
-- ✅ Alembic 기준점 `0001_phase1`
-- 📄 상세: `docs/DB-PHASE1.md`, `schema/001_phase1.sql`, `RUN-API.md`
-- ⬜ 인증 (app_user 로그인, JWT)
-- ⬜ POI/zone 편집 API (관리자 대시보드용)
-- ⬜ WebSocket 실시간 로봇 위치
-- ⬜ React 프론트 (9월)
-- ⏸ 2차 (`data_file`, `annotation`, `dataset` 등) — AI팀 라벨 클래스 확정 대기
-- ⏸ 3차 (`pose_log`, `detection_log` 파티션) — 로그 발행 주기(Hz) 확정 대기
-
-2차·3차 테이블을 **추측해서 미리 만들지 말 것.** 답이 오면 그때 만든다.
-
-## 검사 도구
-
-코드를 고친 뒤에는 이 둘을 돌린다.
+## ✅ 9. 변경 후 반드시 돌릴 것
 
 ```powershell
-.\fix-env.ps1                                          # .env / DB 연결 자동 수리
-.\.venv\Scripts\python.exe tools\preflight.py        # 환경이 정상인지 한 번에
-.\.venv\Scripts\python.exe tools\check_encoding.py   # CP949 인코딩 지뢰
+.\.venv\Scripts\python.exe -m pytest tests_web -q
+npm --prefix web test
+npm --prefix web run build
+.\.venv\Scripts\python.exe -m alembic -c web-alembic.ini check
+.\.venv\Scripts\python.exe tools\check_encoding.py
 ```
 
-`check_encoding.py`는 실제로 두 번 터진 사고를 자동으로 잡는다:
-`alembic.ini`의 한글 주석, `psql -c` 인자의 한글, `.ps1`의 BOM 누락.
+현재 기준선: **API 10개 · 프런트 29개(스캐너 13 + 한글 검색 16) 통과, 빌드 통과, Alembic 빈 diff, 인코딩 검사 통과.**
+이 숫자가 줄어들면 뭔가 깨진 것이다.
 
-## 요구분석
+`npm --prefix web test` 가 `'vitest' is not recognized` 로 실패하면 코드 문제가 아니라
+`node_modules` 가 `vitest` 추가 전에 설치된 것이다. `npm --prefix web install` 을 한 번 돌린다.
 
-설계 문서는 이 순서로 이어진다:
-`REQUIREMENTS.md` → `SCREEN-FLOW.md` → `FEATURES.md` → `ERD.md` → 코드
+## ✅ 10. 작업 습관
 
-**새 API를 만들 때는 `FEATURES.md` 의 기능 이름표를 커밋 메시지에 적는다**
-(예: `feat(직원-목적지편집): ...`). 이름표는 `역할-기능` 형태다.
-그래야 "이 API 왜 있지"를 나중에 추적할 수 있다.
+- **한국어로 답하고 코드 주석도 한국어.** 팀원 5명 전원 한국어 사용자다.
+- 마이그레이션은 `revision --autogenerate` 로만 만든다. **본문을 손으로 고치지 않는다.**
+  이름 없는 제약조건(`None`)이 나오면 그것만 손으로 이름 붙인다.
+- 장소·프로그램은 **물리 삭제 금지.** `is_active` 로 숨긴다 (과거 기록이 참조한다).
+- 외부 CDN·온라인 지도·클라우드 의존성을 추가하지 않는다. **설치 후 LAN 에서 돌아야 한다.**
+- 큰 리팩터링 전에 사용자 승인을 받는다.
 
-`docs/REQUIREMENTS.md` 에 사용자·화면흐름·기록범위와 **미결정 사항**이 정리돼 있다.
-`[제안]` 표시는 웹팀 의견일 뿐 확정이 아니다. 회의 결과에 따라 스키마가 바뀔 수 있다.
+---
 
-1차 스키마는 회의록 기능 로드맵(①~⑨)에서 도출한 **초안**이다.
-요구사항이 확정되면 Alembic 마이그레이션으로 수정한다 — 버리고 다시 짜지 않는다.
+## 한글 검색 규칙은 `web/src/hangulSearch.ts` 에 둔다
 
-## 작업 시작 전 읽을 것
+장소 찾기(이용자)와 직원 화면 목록 검색이 같은 함수(`searchByName`)를 쓴다.
+초성·띄어쓰기 무시·치는 중인 마지막 글자 규칙을 화면 코드에 따로 만들지 말 것. 바꾸면 `hangulSearch.test.ts` 를 같이 고친다.
+검색창의 초성 예시는 **실제 등록된 장소 이름에서 만든다.** 예시용 장소명을 지어 넣지 말 것.
 
-`docs/DB-PHASE1.md` — 1차 스키마의 전체 DDL, 컬럼별 설계 근거, 제약조건 검증 결과, 단계별 작업 지시가 들어 있다.
+## 남은 작업 (우선순위 순)
+
+- ~~장소 검색~~ — 2026-09-17 완료 (큰 검색창, 초성·혼합·띄어쓰기 무시, 결과 없음 시 직원 도움 안내)
+- ~~문서 정리~~ — 2026-09-17 완료 (`docs/archive/`)
+
+1. **예약 이동** — 계획서 5번 "프로그램 시작 전 해당 강의실 앞으로 이동".
+   ⏸ 시뮬레이션팀의 **로봇 이동 API 규격**이 와야 한다 (§8). 규격 없이 요청/응답 형식을 지어내지 말 것.
+2. **영수증 인쇄 다듬기** — 실제 프린터 기종 확정 후 용지 폭·프린터 선택 UX. ⏸ 기관의 프린터 기종 대기.
