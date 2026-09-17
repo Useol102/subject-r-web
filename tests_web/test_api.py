@@ -1,5 +1,7 @@
 """기관·로봇 데이터가 없는 상태에서 웹 계약과 저장 무결성을 검증한다."""
+import re
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -9,8 +11,11 @@ from fastapi.testclient import TestClient
 from sqlalchemy import inspect
 
 from web_api.main import create_app
+from web_api.models import iso_z
 
 ROOT = Path(__file__).resolve().parent.parent
+# 2026-09-17T00:30:00.000Z — 항상 24자, 항상 UTC, 항상 Z
+ISO_Z = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$")
 
 
 @pytest.fixture
@@ -139,3 +144,48 @@ def test_migration_roundtrip_and_model_alignment(database):
     command.check(cfg)
     assert "place" in inspect(app.state.engine).get_table_names()
     app.state.engine.dispose()
+
+
+def test_iso_z_normalizes_timezone_and_truncates_microseconds():
+    # 다른 시간대로 들어와도 UTC 로 바꿔 저장한다. KST 09:30 == UTC 00:30
+    kst = timezone(timedelta(hours=9))
+    assert iso_z(datetime(2026, 9, 17, 9, 30, tzinfo=kst)) == "2026-09-17T00:30:00.000Z"
+    # 마이크로초는 버리고 밀리초 3자리로 자른다 (자릿수가 값마다 달라지면 안 된다)
+    assert iso_z(datetime(2026, 9, 17, 0, 30, 0, 123456, tzinfo=timezone.utc)) == "2026-09-17T00:30:00.123Z"
+    assert iso_z(datetime(2026, 9, 17, 0, 30, 0, 999, tzinfo=timezone.utc)) == "2026-09-17T00:30:00.000Z"
+
+
+def test_every_stored_timestamp_uses_one_format(seeded):
+    """시각 문자열이 섞이면 정렬이 시간순이 아니게 된다.
+
+    SQLite 에 날짜 타입이 없어 비교가 문자열 비교인데, `+00:00` 은 `Z` 보다
+    사전순으로 앞이다. 한 컬럼에 두 형식이 섞이면 `ORDER BY starts_at` 이 조용히 틀린다.
+    """
+    assert seeded.post("/api/admin/trips",
+                       json={"robot_id": "demo-r", "destination_id": "demo-room-a"}).status_code == 201
+    snapshot = seeded.get("/api/snapshot").json()
+    catalog = seeded.get("/api/admin/catalog").json()
+
+    stamps = {}
+    for group in ("places", "programs", "robots"):
+        for row in snapshot[group]:
+            stamps[f"{group}.{row['id']}.created_at"] = row["created_at"]
+    for program in catalog["programs"]:
+        stamps[f"catalog.{program['id']}.starts_at"] = program["starts_at"]
+        stamps[f"catalog.{program['id']}.ends_at"] = program["ends_at"]
+    for trip in seeded.get("/api/admin/trips").json():
+        stamps[f"trip.{trip['id']}.created_at"] = trip["created_at"]
+        stamps[f"trip.{trip['id']}.updated_at"] = trip["updated_at"]
+
+    assert stamps, "검사할 시각이 하나도 없다면 이 테스트가 아무것도 지키지 못한다"
+    wrong = {key: value for key, value in stamps.items() if not ISO_Z.match(value)}
+    assert not wrong, f"형식이 다른 시각: {wrong}"
+
+
+def test_program_order_is_chronological_as_string(seeded):
+    # 문자열 정렬 결과가 곧 시간순이어야 한다 (형식이 하나여야 성립한다)
+    programs = seeded.get("/api/snapshot").json()["programs"]
+    starts = [p["starts_at"] for p in programs]
+    assert starts == sorted(starts)
+    assert [datetime.fromisoformat(s.replace("Z", "+00:00")) for s in starts] == sorted(
+        datetime.fromisoformat(s.replace("Z", "+00:00")) for s in starts)

@@ -89,8 +89,10 @@ YYYY-MM-DDTHH:MM:SS.sssZ      예) 2026-09-17T00:30:00.000Z   (항상 24자, 항
   CHECK (created_at GLOB '[0-9][0-9][0-9][0-9]-[01][0-9]-[0-3][0-9]T[0-2][0-9]:[0-5][0-9]:[0-5][0-9].[0-9][0-9][0-9]Z')
   ```
 
-> **지금 코드에서 이미 섞여 있다.** `models.utc_now()` 는 `2026-09-17T00:30:00.123456+00:00`,
-> Pydantic 이 저장한 `starts_at` 은 `2026-09-17T00:30:00Z` 다. 같은 컬럼 안에서는 한 형식이라 아직 문제가 안 났을 뿐이다.
+> **2026-09-17 해결됨.** 전에는 `models.utc_now()` 가 `...123456+00:00`, Pydantic 이 저장한
+> `starts_at` 이 `...00Z` 로 섞여 있었다. 지금은 저장 경로가 전부 `models.iso_z()` 하나를 거친다.
+> `tests_web/test_api.py` 의 `test_every_stored_timestamp_uses_one_format` 이 다시 섞이는 것을 막는다.
+> DB 층의 CHECK 는 아직 없다 — v2 baseline 마이그레이션을 만들 때 같이 넣는다.
 
 ### 2.3 한국 날짜 컬럼 `*_day_kst`
 

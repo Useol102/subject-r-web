@@ -6,7 +6,7 @@
 - 현재 개발 대상은 `web/`(React 18 + TypeScript + Vite), `web_api/`(FastAPI + SQLAlchemy 2.0 + SQLite), `web_migrations/`이다.
 - 기존 `app/`, `alembic/`, `schema/`, `subject-r-web-frontend.zip`은 이전 PostgreSQL 설계의 참고 자료다. 새 서비스를 실행하는 데 사용하지 않는다. 기존 DB를 자동 변환하거나 삭제하지 않는다.
 - `docs/WEB-START.md`를 먼저 읽는다. `docs/PITFALLS.md`의 인코딩 규칙을 지킨다. `.ps1`은 UTF-8 BOM, `.ini`는 ASCII.
-- SQLite는 TIMESTAMPTZ가 없으므로 시각은 UTC 오프셋이 명시된 ISO 8601 문자열로 저장하고 화면과 일자 집계는 KST를 사용한다.
+- SQLite는 TIMESTAMPTZ가 없으므로 시각은 ISO 8601 문자열로 저장하고 화면과 일자 집계는 KST를 사용한다. 저장 형식은 `web_api/models.py` 의 `iso_z()` 하나로만 만든다 — 24자 `YYYY-MM-DDTHH:MM:SS.sssZ`. 형식이 섞이면 문자열 정렬이 시간순이 아니게 된다.
 - 스키마 변경은 모델 수정 후 `python -m alembic -c web-alembic.ini revision --autogenerate`로 생성한다. 수동 DDL이나 마이그레이션 본문 수정을 금지한다. 전후 `alembic check`와 upgrade → downgrade → upgrade를 검증한다.
 - 실제 기관 데이터, 지도, 로봇 통신, 출결 규격, 프린터 규격은 미확정이다. 예시와 실제 동작을 혼동시키지 않는다.
 - 로봇 제어, 경로 계산, 비전/AI, 엘리베이터 제어는 다른 팀 범위다. 웹은 계약이 확정되면 연결한다.

@@ -60,8 +60,11 @@ PostgreSQL 이 기술적으로 낫다고 판단되더라도 **혼자 되돌리�
 
 ## ⚠️ 3. SQLite 라서 달라진 것
 
-- **`TIMESTAMPTZ` 가 없다.** 시각은 UTC 오프셋이 명시된 **ISO 8601 문자열**(`...Z`)로 저장한다.
+- **`TIMESTAMPTZ` 가 없다.** 시각은 **ISO 8601 문자열**로 저장한다.
   화면 표시와 일자 집계는 **KST(Asia/Seoul)**. 이 둘을 섞으면 "오늘 일정"이 9시간 밀린다.
+- **시각 문자열은 `web_api/models.py` 의 `iso_z()` 로만 만든다.** 24자 `YYYY-MM-DDTHH:MM:SS.sssZ` 고정.
+  날짜 타입이 없어 비교가 **문자열 비교**라, 형식이 섞이면 `ORDER BY` 가 조용히 틀린다
+  (`+00:00` 이 `Z` 보다 사전순으로 앞이다). `datetime.isoformat()` 을 그대로 쓰지 말 것.
 - 부분 유니크 인덱스는 `sqlite_where=text(...)` 로 쓴다 (`web_api/models.py` 의 `uq_trip_robot_active` 참고).
 - 동시 쓰기가 약하다. 배치 작업은 한 트랜잭션으로 묶고, 긴 루프 안에서 커밋하지 않는다.
 
@@ -121,7 +124,7 @@ npm --prefix web run build
 .\.venv\Scripts\python.exe tools\check_encoding.py
 ```
 
-현재 기준선: **API 10개 · 프런트 37개(스캐너 13 + 한글 검색 16 + 영수증 8) 통과, 빌드 통과, Alembic 빈 diff, 인코딩 검사 통과.**
+현재 기준선: **API 13개 · 프런트 37개(스캐너 13 + 한글 검색 16 + 영수증 8) 통과, 빌드 통과, Alembic 빈 diff, 인코딩 검사 통과.**
 이 숫자가 줄어들면 뭔가 깨진 것이다.
 
 `npm --prefix web test` 가 `'vitest' is not recognized` 로 실패하면 코드 문제가 아니라

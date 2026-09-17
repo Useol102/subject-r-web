@@ -15,7 +15,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from .db import make_engine
-from .models import Attendance, Place, Program, Robot, Trip, utc_now
+from .models import Attendance, Place, Program, Robot, Trip, iso_z, utc_now
 from .schemas import AttendanceIn, CatalogIn, PlaceIn, ProgramIn, TripIn, TripState
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -64,6 +64,10 @@ def create_app(database_url: str | None = None, demo: bool | None = None, admin_
     def put_program(session, value):
         require_place(session, value.place_id)
         values = value.model_dump(mode="json")
+        # Pydantic 의 datetime 직렬화는 마이크로초 자릿수가 값마다 달라진다.
+        # 저장 형식은 iso_z 하나로만 정한다 (models.iso_z 주석 참고).
+        values["starts_at"] = iso_z(value.starts_at)
+        values["ends_at"] = iso_z(value.ends_at)
         row = session.get(Program, value.id)
         if row is None:
             session.add(Program(**values))

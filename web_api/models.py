@@ -4,8 +4,23 @@ from sqlalchemy import Boolean, CheckConstraint, ForeignKey, Index, JSON, MetaDa
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
+def iso_z(moment: datetime) -> str:
+    """시각을 한 가지 형식으로만 만든다 — `2026-09-17T00:30:00.000Z` (항상 24자, 항상 UTC, 항상 Z).
+
+    SQLite 에는 날짜 타입이 없어서 시각은 문자열이고, **정렬·비교도 문자열 비교**다.
+    형식이 섞이면 조용히 틀린다. 예를 들어 `+00:00` 은 `Z` 보다 사전순으로 앞이라,
+    한 컬럼에 두 형식이 섞이면 `ORDER BY starts_at` 이 시간순이 아니게 된다.
+
+    파이썬 `datetime.isoformat()` 을 그대로 쓰면 안 된다 — 마이크로초 6자리에
+    `+00:00` 을 붙여서 자바스크립트 `toISOString()` 과 형식이 어긋난다.
+    시각을 저장하는 곳은 전부 이 함수 하나만 거친다.
+    """
+    utc = moment.astimezone(timezone.utc)
+    return f"{utc:%Y-%m-%dT%H:%M:%S}.{utc.microsecond // 1000:03d}Z"
+
+
 def utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return iso_z(datetime.now(timezone.utc))
 
 
 class Base(DeclarativeBase):
