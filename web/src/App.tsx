@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight, BookOpen, CalendarDays, Check, ChevronRight, Clo
 import { day, floorName, request, time, type Place, type Program, type Snapshot } from './api'
 import { choseongOf, searchByName } from './hangulSearch'
 import { createScanBuffer, pickDefaultProgram } from './scanner'
+import { DEFAULT_PAPER, pageRule, paperProfile, paperWidths, readPaperWidth, type PaperWidth } from './receipt'
 import Admin from './Admin'
 
 type Page = 'home'|'programs'|'places'|'attendance'|'detail'
@@ -21,12 +22,28 @@ export default function App(){
   const [manual,setManual]=useState(false)
   const [reading,setReading]=useState(false)
   const [now,setNow]=useState(new Date())
+  // 프린터 기종 미확정. 80mm 기본, 58mm 전환 가능 (web/src/receipt.ts)
+  const [paper,setPaper]=useState<PaperWidth>(()=>{
+    try{return readPaperWidth(localStorage.getItem('receipt-paper'))}catch{return DEFAULT_PAPER}
+  })
   const mainRef=useRef<HTMLElement>(null)
   const searchRef=useRef<HTMLInputElement>(null)
   // 스캐너 리스너는 한 번만 붙이고, 최신 값은 ref 로 읽는다 (리스너 재등록 방지)
   const attendRef=useRef<(code:string,target:string)=>void>(()=>{})
   const liveRef=useRef({programId:'',demo:false})
   const isAdmin=window.location.pathname==='/admin'
+  // `@page` 는 문서 전체 규칙이라 CSS 변수를 못 받는다. 폭이 바뀌면 규칙을 통째로 갈아끼운다.
+  useEffect(()=>{
+    const profile=paperProfile(paper)
+    const existing=document.getElementById('receipt-page')
+    const style=existing||Object.assign(document.createElement('style'),{id:'receipt-page'})
+    style.textContent=pageRule(paper)
+    if(!existing)document.head.appendChild(style)
+    document.documentElement.style.setProperty('--receipt-w',profile.content)
+    document.documentElement.style.setProperty('--receipt-base',profile.base)
+    // 저장소가 막힌 키오스크에서도 인쇄 자체는 되어야 한다
+    try{localStorage.setItem('receipt-paper',String(paper))}catch{/* 저장 실패는 무시 */}
+  },[paper])
   const load=useCallback(async()=>{
     try {setData(await request<Snapshot>('/snapshot'));setError('')}catch(e){setError((e as Error).message)}
   },[])
@@ -115,7 +132,7 @@ export default function App(){
         <div className="place-grid">{foundPlaces.map(p=><button className="place-card" onClick={()=>choose(p)} key={p.id}><span className="floor-box">{floorName(p.floor)}</span><div><span className="muted">{p.category}</span><h2>{p.name}</h2><p>{p.wheelchair_accessible?`휠체어 이용 가능${data?.demo?' · 예시 정보':''}`:'접근성 정보 확인 필요'}</p></div><ChevronRight/></button>)}</div>
         {!foundPlaces.length&&<div className="empty"><MapPin/><p>{query.trim()?'다른 이름이나 첫 자음으로 다시 찾아보세요.':'이 층에 등록된 장소가 없어요.'}</p><button className="secondary" onClick={()=>setHelp(true)}><MessageCircle size={20}/>직원에게 물어보기</button></div>}
       </>}
-      {page==='detail'&&selected&&<><div className="detail-layout"><section className="detail-info"><span className="eyebrow">{pickedProgram?'프로그램 안내':'장소 안내'}</span><h1>{pickedProgram?.title||pickedPlace?.name}</h1><p className="detail-description">{selected.description}</p>{pickedProgram&&<div className="detail-facts"><div><CalendarDays/>날짜<strong>{day(pickedProgram.starts_at)}</strong></div><div><Clock3/>시간<strong>{time(pickedProgram.starts_at)} – {time(pickedProgram.ends_at)}</strong></div>{pickedProgram.instructor&&<div><BookOpen/>진행<strong>{pickedProgram.instructor}</strong></div>}</div>}<div className="place-highlight"><MapPin/><div><small>찾아가실 곳</small><strong>{pickedPlace?`${floorName(pickedPlace.floor)} · ${pickedPlace.name}`:'장소 정보 확인 필요'}</strong></div></div><button className="primary print-button" onClick={()=>window.print()}><Printer size={21}/>안내문 인쇄하기</button><p className="micro">연결된 프린터를 선택해 주세요. 인쇄 완료 여부는 프린터에서 확인해요.</p></section><section className="directions-card"><span className="tag">장소 안내</span><h2>천천히 찾아오세요</h2><p className="muted">{data?.demo?'예시 안내 · 실제 이동에 사용하지 마세요.':'등록된 안내문입니다. 현재 위치 기준 자동 경로는 제공하지 않아요.'}</p><div className="map-placeholder"><MapPin size={38}/><strong>실내 지도를 준비하고 있어요</strong><span>실측 지도와 경로를 받으면 여기에 연결해요.</span></div>{pickedPlace?.directions.length?<ol className="directions">{pickedPlace.directions.map((step,i)=><li key={i}><span>{i+1}</span><p>{step}</p></li>)}</ol>:<p>안내 문구가 아직 없어요. 직원에게 물어봐 주세요.</p>}{pickedPlace?.wheelchair_accessible&&<div className="access-note"><Accessibility size={20}/>휠체어 이용 가능{data?.demo?' · 예시 정보':''}</div>}</section></div></>}
+      {page==='detail'&&selected&&<><div className="detail-layout"><section className="detail-info"><span className="eyebrow">{pickedProgram?'프로그램 안내':'장소 안내'}</span><h1>{pickedProgram?.title||pickedPlace?.name}</h1><p className="detail-description">{selected.description}</p>{pickedProgram&&<div className="detail-facts"><div><CalendarDays/>날짜<strong>{day(pickedProgram.starts_at)}</strong></div><div><Clock3/>시간<strong>{time(pickedProgram.starts_at)} – {time(pickedProgram.ends_at)}</strong></div>{pickedProgram.instructor&&<div><BookOpen/>진행<strong>{pickedProgram.instructor}</strong></div>}</div>}<div className="place-highlight"><MapPin/><div><small>찾아가실 곳</small><strong>{pickedPlace?`${floorName(pickedPlace.floor)} · ${pickedPlace.name}`:'장소 정보 확인 필요'}</strong></div></div><div className="paper-pick">용지 폭{paperWidths().map(w=><button key={w} type="button" aria-pressed={paper===w} onClick={()=>setPaper(w)}>{w}mm</button>)}</div><button className="primary print-button" onClick={()=>window.print()}><Printer size={21}/>안내문 인쇄하기</button><p className="micro">연결된 프린터를 선택해 주세요. 인쇄 완료 여부는 프린터에서 확인해요.</p></section><section className="directions-card"><span className="tag">장소 안내</span><h2>천천히 찾아오세요</h2><p className="muted">{data?.demo?'예시 안내 · 실제 이동에 사용하지 마세요.':'등록된 안내문입니다. 현재 위치 기준 자동 경로는 제공하지 않아요.'}</p><div className="map-placeholder"><MapPin size={38}/><strong>실내 지도를 준비하고 있어요</strong><span>실측 지도와 경로를 받으면 여기에 연결해요.</span></div>{pickedPlace?.directions.length?<ol className="directions">{pickedPlace.directions.map((step,i)=><li key={i}><span>{i+1}</span><p>{step}</p></li>)}</ol>:<p>안내 문구가 아직 없어요. 직원에게 물어봐 주세요.</p>}{pickedPlace?.wheelchair_accessible&&<div className="access-note"><Accessibility size={20}/>휠체어 이용 가능{data?.demo?' · 예시 정보':''}</div>}</section></div></>}
       {page==='attendance'&&<><PageTitle eyebrow="반가워요, 잘 오셨어요" title="프로그램 출석을 확인해요" description={manual?'예시 코드를 직접 넣어 확인해요.':'회원증 바코드를 스캐너에 대 주세요.'}/><div className="attendance-layout">
         <div className={`scan-illustration${reading?' is-reading':''}${busy?' is-busy':''}`}>
           <ScanLine size={94} strokeWidth={1}/>

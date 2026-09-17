@@ -83,7 +83,7 @@ API를 직접 실행할 때는 `http://127.0.0.1:8000/admin`도 빌드된 `web/d
 - 실내 지도와 검증된 경로: `web/src/App.tsx`의 지도 자리표시자와 장소 `directions`를 실제 계약에 맞게 교체한다.
 - 시뮬레이션팀의 이동 API: `web_api/main.py`의 `/api/admin/trips`와 데모 상태 API를 실제 브리지 호출로 교체한다. 요청/응답 스키마를 먼저 문서화한다.
 - 기관 출결 API: `/api/attendance/demo`를 실제 출결 어댑터로 교체한다. 회원번호·QR 원문을 로그나 SQLite에 저장하지 않는다.
-- 프린터 사양: 현재는 브라우저 `window.print()`이며, 용지 폭·프린터 선택 UX를 현장 기종에 맞춘다.
+- 프린터 사양: 브라우저 `window.print()` 를 쓰며, 용지 폭은 80mm(기본)/58mm 를 화면에서 전환한다. 기종이 정해지면 실물로 한 장 뽑아 여백과 잘림을 확인한다.
 
 ## 검증 명령
 
@@ -95,7 +95,7 @@ npm --prefix web run build
 .\.venv\Scripts\python.exe tools\check_encoding.py
 ```
 
-현재 검증 결과: API 테스트 10개 통과, 프런트 테스트 29개 통과(스캐너 13, 한글 검색 16), 웹 TypeScript/Vite 빌드 통과, Alembic 빈 diff 통과, 인코딩 검사 통과.
+현재 검증 결과: API 테스트 10개 통과, 프런트 테스트 37개 통과(스캐너 13, 한글 검색 16, 영수증 8), 웹 TypeScript/Vite 빌드 통과, Alembic 빈 diff 통과, 인코딩 검사 통과.
 
 바코드 입력은 실제 브라우저에서 스캐너 속도(글자당 10ms + Enter)와 사람 타자 속도(200ms)를 각각 흘려보내 확인했다. 스캐너 속도만 출석으로 잡히고, 사람 타자는 무시된다.
 
