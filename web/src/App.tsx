@@ -68,6 +68,8 @@ export default function App(){
     const program=programById.get(s.program_id)
     return program?[{...s,title:program.title,category:program.category,program}]:[]
   })
+  // 휴강은 목록에 보여주되(헛걸음 방지) 출석 대상에서는 뺀다.
+  const todaysOpen=todays.filter(s=>s.status==='scheduled')
   // iso_z 로 형식이 고정돼 있어 문자열 비교가 곧 시간 비교다. toISOString() 과 같은 형식이다.
   const shownSession=(programId:string)=>{
     const list=sessions.filter(s=>s.program_id===programId)
@@ -76,8 +78,8 @@ export default function App(){
   // 출석 화면에 들어오면 지금 시간대의 프로그램을 미리 골라준다.
   useEffect(()=>{
     if(page!=='attendance')return
-    setProgramId(prev=>prev||pickDefaultProgram(todays,now)?.id||'')
-  },[page,todays.length])// eslint-disable-line react-hooks/exhaustive-deps
+    setProgramId(prev=>prev||pickDefaultProgram(todaysOpen,now)?.id||'')
+  },[page,todaysOpen.length])// eslint-disable-line react-hooks/exhaustive-deps
   // 바코드 스캐너(키보드 웨지) 입력을 받는다. 직접 입력 중에는 끈다.
   useEffect(()=>{
     if(isAdmin||page!=='attendance'||manual)return
@@ -130,7 +132,7 @@ export default function App(){
       {page==='home'&&<>
         <section className="welcome"><div><div className="eyebrow">반가워요, 오늘도 함께해요</div><h1>어떤 도움이<br/>필요하세요?</h1><p>찾고 싶은 정보, 천천히 골라 주세요.</p></div><div className="welcome-art" aria-hidden="true"><div className="orbit orbit-one"/><div className="orbit orbit-two"/><span className="art-spark"><Sparkles size={30}/></span><div className="robot-illustration"><div className="robot-top"><span/><span/></div><div className="robot-smile"/><span className="robot-r">R</span><div className="robot-base"/></div><div className="art-caption">오늘도 좋은 하루 보내세요 <span>✦</span></div></div></section>
         <section className="action-grid" aria-label="주요 안내"><button className="action-card program-action" onClick={()=>navigate('programs')}><div className="action-top"><span className="action-icon"><CalendarDays size={31}/></span><span className="card-number">01</span></div><h2>프로그램 보기</h2><p>오늘은 어떤 배움이 있을까요?</p><span className="action-bottom">강의 · 행사 안내 <ArrowRight/></span></button><button className="action-card place-action" onClick={()=>navigate('places')}><div className="action-top"><span className="action-icon"><MapPin size={31}/></span><span className="card-number">02</span></div><h2>장소 찾기</h2><p>찾아가실 곳을 알려드릴게요.</p><span className="action-bottom">강의실 · 편의시설 <ArrowRight/></span></button><button className="action-card attendance-action" onClick={()=>navigate('attendance')}><div className="action-top"><span className="action-icon"><ScanLine size={31}/></span><span className="card-number">03</span></div><h2>출석 확인</h2><p>참여하실 프로그램에 출석해요.</p><span className="action-bottom">QR · 바코드 안내 <ArrowRight/></span></button></section>
-        <section className="today-section"><div className="section-heading"><h2><span className="tiny-square"/>오늘의 프로그램 <span className="count">{todays.length}</span></h2><button className="text-button" onClick={()=>navigate('programs')}>모두 보기 <ChevronRight size={17}/></button></div>{todays.length?<div className="today-list">{todays.slice(0,3).map(p=><button className="today-row" key={p.id} onClick={()=>choose(p.program)}><span className="program-time">{time(p.starts_at)}</span><span className={`tag tag-${p.category}`}>{p.category}</span><strong>{p.title}</strong><span className="muted row-place">{places.find(x=>x.id===p.place_id)?.name}</span><ChevronRight size={20}/></button>)}</div>:<div className="empty compact"><CalendarDays/>아직 오늘의 프로그램이 등록되지 않았어요.<small>직원 화면에서 프로그램을 등록하면 여기에 표시돼요.</small><a className="text-button" href="/admin">직원 화면 열기 <ArrowRight size={16}/></a></div>}</section>
+        <section className="today-section"><div className="section-heading"><h2><span className="tiny-square"/>오늘의 프로그램 <span className="count">{todays.length}</span></h2><button className="text-button" onClick={()=>navigate('programs')}>모두 보기 <ChevronRight size={17}/></button></div>{todays.length?<div className="today-list">{todays.slice(0,3).map(p=><button className="today-row" key={p.id} onClick={()=>choose(p.program)}><span className="program-time">{time(p.starts_at)}</span><span className={`tag tag-${p.category}`}>{p.category}</span><strong>{p.title}</strong>{p.status==='canceled'&&<span className="tag tag-휴강">휴강{p.cancel_reason?` · ${p.cancel_reason}`:''}</span>}<span className="muted row-place">{places.find(x=>x.id===p.place_id)?.name}</span><ChevronRight size={20}/></button>)}</div>:<div className="empty compact"><CalendarDays/>아직 오늘의 프로그램이 등록되지 않았어요.<small>직원 화면에서 프로그램을 등록하면 여기에 표시돼요.</small><a className="text-button" href="/admin">직원 화면 열기 <ArrowRight size={16}/></a></div>}</section>
       </>}
       {page==='programs'&&<><PageTitle eyebrow="함께 배우는 즐거움" title="프로그램을 골라 주세요" description="프로그램을 누르면 시간과 장소를 볼 수 있어요."/><div className="filter-row">{['전체','건강','문화','디지털','행사'].map(x=><button key={x} aria-pressed={filter===x} className={filter===x?'chip active':'chip'} onClick={()=>setFilter(x)}>{x}</button>)}</div><div className="program-grid">{programs.filter(p=>filter==='전체'||p.category===filter).map(p=><button className="program-card" key={p.id} onClick={()=>choose(p)}><div className="card-title-line"><span className={`tag tag-${p.category}`}>{p.category}</span><BookOpen size={24}/></div><h2>{p.title}</h2><p>{p.description}</p><div className="program-meta">{shownSession(p.id)&&<><span><CalendarDays size={17}/>{day(shownSession(p.id)!.starts_at)}</span><span><Clock3 size={17}/>{time(shownSession(p.id)!.starts_at)} – {time(shownSession(p.id)!.ends_at)}</span></>}<span><MapPin size={17}/>{places.find(x=>x.id===p.place_id)?.name||'장소 확인 필요'}</span></div><span className="card-link">자세히 보기 <ArrowRight size={20}/></span></button>)}</div>{!programs.filter(p=>filter==='전체'||p.category===filter).length&&<Empty text="등록된 프로그램이 없어요."/>}</>}
       {page==='places'&&<><PageTitle eyebrow="어디로 가시나요?" title="찾으시는 장소를 골라 주세요" description="장소별 안내와 이용 정보를 확인할 수 있어요."/>
@@ -152,7 +154,7 @@ export default function App(){
           <span className="tag">{data?.demo?'현재는 체험 화면이에요':'기관 연동 준비 중이에요'}</span>
         </div>
         <div className="attendance-form">
-          <label>참여 프로그램<select value={programId} onChange={e=>setProgramId(e.target.value)} disabled={!todays.length}><option value="" disabled>오늘의 프로그램을 선택해 주세요</option>{todays.map(p=><option value={p.id} key={p.id}>{time(p.starts_at)} · {p.title}</option>)}</select></label>
+          <label>참여 프로그램<select value={programId} onChange={e=>setProgramId(e.target.value)} disabled={!todaysOpen.length}><option value="" disabled>오늘의 프로그램을 선택해 주세요</option>{todaysOpen.map(p=><option value={p.id} key={p.id}>{time(p.starts_at)} · {p.title}</option>)}</select></label>
           {!todays.length&&<p className="muted">오늘 예정된 프로그램이 없어요.</p>}
           {manual
             ?<form className="manual-scan" onSubmit={e=>{e.preventDefault();const input=e.currentTarget.elements.namedItem('code') as HTMLInputElement;void attend(input.value,programId);input.value=''}}>
