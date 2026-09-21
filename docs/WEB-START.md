@@ -97,7 +97,7 @@ npm --prefix web run build
 .\.venv\Scripts\python.exe tools\check_encoding.py
 ```
 
-현재 검증 결과: API 테스트 20개 통과, 프런트 테스트 37개 통과(스캐너 13, 한글 검색 16, 영수증 8), 웹 TypeScript/Vite 빌드 통과, Alembic 빈 diff 통과, 인코딩 검사 통과.
+현재 검증 결과: API 테스트 20개 통과, 프런트 테스트 55개 통과(스캐너 13, 한글 검색 16, 영수증 8, 회차 반복 18), 웹 TypeScript/Vite 빌드 통과, Alembic 빈 diff 통과, 인코딩 검사 통과.
 
 바코드 입력은 실제 브라우저에서 스캐너 속도(글자당 10ms + Enter)와 사람 타자 속도(200ms)를 각각 흘려보내 확인했다. 스캐너 속도만 출석으로 잡히고, 사람 타자는 무시된다.
 

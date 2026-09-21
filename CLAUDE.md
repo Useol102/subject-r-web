@@ -124,7 +124,7 @@ npm --prefix web run build
 .\.venv\Scripts\python.exe tools\check_encoding.py
 ```
 
-현재 기준선: **API 20개 · 프런트 37개(스캐너 13 + 한글 검색 16 + 영수증 8) 통과, 빌드 통과, Alembic 빈 diff, 인코딩 검사 통과.**
+현재 기준선: **API 20개 · 프런트 55개(스캐너 13 + 한글 검색 16 + 영수증 8 + 회차반복 18) 통과, 빌드 통과, Alembic 빈 diff, 인코딩 검사 통과.**
 이 숫자가 줄어들면 뭔가 깨진 것이다.
 
 `npm --prefix web test` 가 `'vitest' is not recognized` 로 실패하면 코드 문제가 아니라
@@ -140,6 +140,15 @@ npm --prefix web run build
 - 큰 리팩터링 전에 사용자 승인을 받는다.
 
 ---
+
+## 회차 반복 계산은 `web/src/recurrence.ts` 에 둔다
+
+"매주 화요일 10시, 8주" 를 회차 8개로 펴는 계산이다. **DOM 을 모르는 순수 함수**로 두고
+`recurrence.test.ts` 로 검증한다. 바꾸면 테스트를 같이 고친다.
+
+`datetime-local` 값에는 시간대가 없다. `new Date(문자열)` 로 읽으면 **브라우저가 있는 곳의
+시간대**로 해석해서, 키오스크가 아닌 PC 에서 날짜가 하루 밀린다. `kstLocalToDate()` 로만 읽을 것.
+테스트는 UTC·뉴욕·서울·키리바시에서 전부 돌려 확인했다.
 
 ## 한글 검색 규칙은 `web/src/hangulSearch.ts` 에 둔다
 
