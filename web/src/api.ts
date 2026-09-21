@@ -1,9 +1,13 @@
 export type Place = { id:string; name:string; floor:number; category:string; description:string; directions:string[]; wheelchair_accessible:boolean; is_active:boolean }
-export type Program = { id:string; title:string; category:string; place_id:string; starts_at:string; ends_at:string; description:string; instructor:string; is_active:boolean }
+export type Program = { id:string; title:string; category:string; place_id:string; description:string; instructor:string; is_active:boolean }
+/** 강좌의 한 회차. 시각과 장소는 프로그램이 아니라 회차에 있다 (반복 강좌 때문). */
+export type Session = { id:string; program_id:string; place_id:string; starts_at:string; ends_at:string; session_day_kst:string; status:'scheduled'|'canceled'; cancel_reason:string }
 export type Robot = {id:string; name:string; current_place_id:string; home_place_id:string}
 export type Trip = {id:string; robot_id:string; destination_id:string; status:'requested'|'moving'|'arrived'|'canceled'|'failed'; is_simulated:boolean; created_at:string; updated_at:string}
-export type Snapshot = {demo:boolean; places:Place[]; programs:Program[]; robots:Robot[]; integrations:Record<string,string>}
-export type Catalog = {version:1; places:Place[]; programs:Program[]}
+export type Snapshot = {demo:boolean; places:Place[]; programs:Program[]; sessions:Session[]; robots:Robot[]; integrations:Record<string,string>}
+/** 내보내기 양식은 사람이 읽는 문서라 회차를 프로그램 안에 중첩한다. 화면이 훑는 Snapshot 은 반대로 평면이다. */
+export type CatalogSession = Omit<Session,'program_id'|'session_day_kst'>
+export type Catalog = {version:2; places:Place[]; programs:(Program&{sessions:CatalogSession[]})[]}
 
 export async function request<T>(path:string, method='GET', data?:unknown):Promise<T> {
   const controller = new AbortController()

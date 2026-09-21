@@ -72,7 +72,9 @@ API를 직접 실행할 때는 `http://127.0.0.1:8000/admin`도 빌드된 `web/d
 `web_api/demo-catalog.json`이 교체용 예시 양식이다.
 
 - 장소 ID와 프로그램 ID는 영문·숫자·하이픈·밑줄 1~64자
-- 프로그램의 `starts_at`, `ends_at`는 UTC ISO 8601(`Z`)로 저장
+- 양식은 **version 2** 다. 시각은 프로그램이 아니라 `programs[].sessions[]` (회차)에 있다.
+  옛 version 1(프로그램에 시각이 붙은 형태)도 계속 가져올 수 있고, 회차 1개로 변환해 읽는다.
+- 회차의 `starts_at`, `ends_at`는 UTC ISO 8601(`Z`)로 저장
 - 화면의 날짜·시간 표시와 오늘 필터는 Asia/Seoul(KST)
 - 장소를 비활성화하면 이용자 화면에서 숨지만 DB 기록은 남긴다.
 - 사용 중인 장소를 비활성화하면 프로그램·로봇 참조 무결성 때문에 거부한다.
@@ -95,7 +97,7 @@ npm --prefix web run build
 .\.venv\Scripts\python.exe tools\check_encoding.py
 ```
 
-현재 검증 결과: API 테스트 13개 통과, 프런트 테스트 37개 통과(스캐너 13, 한글 검색 16, 영수증 8), 웹 TypeScript/Vite 빌드 통과, Alembic 빈 diff 통과, 인코딩 검사 통과.
+현재 검증 결과: API 테스트 20개 통과, 프런트 테스트 37개 통과(스캐너 13, 한글 검색 16, 영수증 8), 웹 TypeScript/Vite 빌드 통과, Alembic 빈 diff 통과, 인코딩 검사 통과.
 
 바코드 입력은 실제 브라우저에서 스캐너 속도(글자당 10ms + Enter)와 사람 타자 속도(200ms)를 각각 흘려보내 확인했다. 스캐너 속도만 출석으로 잡히고, 사람 타자는 무시된다.
 

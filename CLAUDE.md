@@ -124,7 +124,7 @@ npm --prefix web run build
 .\.venv\Scripts\python.exe tools\check_encoding.py
 ```
 
-현재 기준선: **API 13개 · 프런트 37개(스캐너 13 + 한글 검색 16 + 영수증 8) 통과, 빌드 통과, Alembic 빈 diff, 인코딩 검사 통과.**
+현재 기준선: **API 20개 · 프런트 37개(스캐너 13 + 한글 검색 16 + 영수증 8) 통과, 빌드 통과, Alembic 빈 diff, 인코딩 검사 통과.**
 이 숫자가 줄어들면 뭔가 깨진 것이다.
 
 `npm --prefix web test` 가 `'vitest' is not recognized` 로 실패하면 코드 문제가 아니라

@@ -890,7 +890,7 @@ stateDiagram-v2
 | `place.category` 문자열 (Literal) | `category_id` → `place_category` | `schemas.py` Literal 제거 |
 | `place.directions` JSON | `route` + `route_step` | 상세 화면·영수증 |
 | `place.wheelchair_accessible` bool | `accessibility` 4단계 | 화면 문구 |
-| `program` (시간 포함) | `program` + `program_session` | 홈·목록·출석이 회차 기준으로 |
+| ~~`program` (시간 포함)~~ | ~~`program` + `program_session`~~ | **2026-09-21 반영 완료.** 회차 분리·휴강·회차별 장소까지. `attendance` 는 회차를 가리킨다. `attendance_open_minutes`·`needs_robot_prep` 는 아직 없다 |
 | `attendance.code_hash` SHA-256 | `member_token` HMAC + 결과·전송 상태 | 비밀키 환경변수 추가 |
 | `attendance` 성공만 저장 | 시도마다 저장 | 중복 판정을 부분 유니크로 |
 | `robot` 최소 컬럼 | 상태·배터리·인증키·연결 방식 | — |

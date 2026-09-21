@@ -1,17 +1,157 @@
 {
-  "version": 1,
+  "version": 2,
   "places": [
-    {"id":"demo-lobby","name":"로비 안내데스크","floor":1,"category":"안내","description":"복지관 이용이 궁금하다면 직원에게 물어보세요.","directions":["1층 로비 안내데스크를 찾아주세요."],"wheelchair_accessible":true,"is_active":true},
-    {"id":"demo-room-a","name":"배움교실","floor":2,"category":"강의실","description":"새로운 것을 배우고 함께 나누는 공간이에요.","directions":["1층 안내데스크에서 엘리베이터 방향으로 이동해요.","엘리베이터를 타고 2층으로 올라가요.","내린 뒤 배움교실 안내 표지를 찾아주세요."],"wheelchair_accessible":true,"is_active":true},
-    {"id":"demo-room-b","name":"건강교실","floor":2,"category":"강의실","description":"가벼운 운동과 건강 프로그램이 열려요.","directions":["1층 로비에서 엘리베이터를 찾아요.","2층으로 올라간 뒤 건강교실 표지를 확인해요."],"wheelchair_accessible":true,"is_active":true},
-    {"id":"demo-hall","name":"어울림 강당","floor":3,"category":"강의실","description":"이웃과 함께하는 공연과 행사를 만나요.","directions":["1층 로비에서 엘리베이터를 찾아요.","3층으로 올라간 뒤 어울림 강당 표지를 확인해요."],"wheelchair_accessible":true,"is_active":true},
-    {"id":"demo-restroom","name":"화장실","floor":1,"category":"편의시설","description":"편의시설 위치를 확인해 보세요.","directions":["1층 안내데스크에서 화장실 표지를 찾아주세요."],"wheelchair_accessible":true,"is_active":true},
-    {"id":"demo-office","name":"상담실","floor":1,"category":"상담","description":"복지 서비스와 이용 방법을 상담하는 곳이에요.","directions":["1층 안내데스크에 상담실 위치를 문의해 주세요."],"wheelchair_accessible":false,"is_active":true}
+    {
+      "id": "demo-lobby",
+      "name": "로비 안내데스크",
+      "floor": 1,
+      "category": "안내",
+      "description": "복지관 이용이 궁금하다면 직원에게 물어보세요.",
+      "directions": [
+        "1층 로비 안내데스크를 찾아주세요."
+      ],
+      "wheelchair_accessible": true,
+      "is_active": true
+    },
+    {
+      "id": "demo-room-a",
+      "name": "배움교실",
+      "floor": 2,
+      "category": "강의실",
+      "description": "새로운 것을 배우고 함께 나누는 공간이에요.",
+      "directions": [
+        "1층 안내데스크에서 엘리베이터 방향으로 이동해요.",
+        "엘리베이터를 타고 2층으로 올라가요.",
+        "내린 뒤 배움교실 안내 표지를 찾아주세요."
+      ],
+      "wheelchair_accessible": true,
+      "is_active": true
+    },
+    {
+      "id": "demo-room-b",
+      "name": "건강교실",
+      "floor": 2,
+      "category": "강의실",
+      "description": "가벼운 운동과 건강 프로그램이 열려요.",
+      "directions": [
+        "1층 로비에서 엘리베이터를 찾아요.",
+        "2층으로 올라간 뒤 건강교실 표지를 확인해요."
+      ],
+      "wheelchair_accessible": true,
+      "is_active": true
+    },
+    {
+      "id": "demo-hall",
+      "name": "어울림 강당",
+      "floor": 3,
+      "category": "강의실",
+      "description": "이웃과 함께하는 공연과 행사를 만나요.",
+      "directions": [
+        "1층 로비에서 엘리베이터를 찾아요.",
+        "3층으로 올라간 뒤 어울림 강당 표지를 확인해요."
+      ],
+      "wheelchair_accessible": true,
+      "is_active": true
+    },
+    {
+      "id": "demo-restroom",
+      "name": "화장실",
+      "floor": 1,
+      "category": "편의시설",
+      "description": "편의시설 위치를 확인해 보세요.",
+      "directions": [
+        "1층 안내데스크에서 화장실 표지를 찾아주세요."
+      ],
+      "wheelchair_accessible": true,
+      "is_active": true
+    },
+    {
+      "id": "demo-office",
+      "name": "상담실",
+      "floor": 1,
+      "category": "상담",
+      "description": "복지 서비스와 이용 방법을 상담하는 곳이에요.",
+      "directions": [
+        "1층 안내데스크에 상담실 위치를 문의해 주세요."
+      ],
+      "wheelchair_accessible": false,
+      "is_active": true
+    }
   ],
   "programs": [
-    {"id":"demo-stretch","title":"몸이 가벼워지는 건강 체조","category":"건강","place_id":"demo-room-b","starts_at":"2026-09-17T09:30:00+09:00","ends_at":"2026-09-17T10:30:00+09:00","description":"의자에 앉아서도 따라 할 수 있는 가벼운 체조예요. 편한 옷차림으로 함께해 주세요.","instructor":"예시 강사","is_active":true},
-    {"id":"demo-phone","title":"차근차근 스마트폰 교실","category":"디지털","place_id":"demo-room-a","starts_at":"2026-09-17T11:00:00+09:00","ends_at":"2026-09-17T12:00:00+09:00","description":"사진 보내기부터 길 찾기까지, 일상에 필요한 스마트폰 사용법을 천천히 배워요.","instructor":"예시 강사","is_active":true},
-    {"id":"demo-art","title":"색으로 만나는 나의 하루","category":"문화","place_id":"demo-room-a","starts_at":"2026-09-17T13:30:00+09:00","ends_at":"2026-09-17T15:00:00+09:00","description":"그림을 처음 그려도 괜찮아요. 좋아하는 색으로 오늘의 마음을 표현해 보세요.","instructor":"예시 강사","is_active":true},
-    {"id":"demo-music","title":"함께 부르는 가을 음악회","category":"행사","place_id":"demo-hall","starts_at":"2026-09-17T15:00:00+09:00","ends_at":"2026-09-17T16:00:00+09:00","description":"친숙한 노래와 함께 이웃을 만나는 시간이에요. 편하게 들러 주세요.","instructor":"예시 진행자","is_active":true}
+    {
+      "id": "demo-stretch",
+      "title": "몸이 가벼워지는 건강 체조",
+      "category": "건강",
+      "place_id": "demo-room-b",
+      "description": "의자에 앉아서도 따라 할 수 있는 가벼운 체조예요. 편한 옷차림으로 함께해 주세요.",
+      "instructor": "예시 강사",
+      "is_active": true,
+      "sessions": [
+        {
+          "id": "demo-stretch-1",
+          "starts_at": "2026-09-17T09:30:00+09:00",
+          "ends_at": "2026-09-17T10:30:00+09:00"
+        },
+        {
+          "id": "demo-stretch-2",
+          "starts_at": "2026-09-24T09:30:00+09:00",
+          "ends_at": "2026-09-24T10:30:00+09:00"
+        },
+        {
+          "id": "demo-stretch-3",
+          "starts_at": "2026-10-01T09:30:00+09:00",
+          "ends_at": "2026-10-01T10:30:00+09:00"
+        }
+      ]
+    },
+    {
+      "id": "demo-phone",
+      "title": "차근차근 스마트폰 교실",
+      "category": "디지털",
+      "place_id": "demo-room-a",
+      "description": "사진 보내기부터 길 찾기까지, 일상에 필요한 스마트폰 사용법을 천천히 배워요.",
+      "instructor": "예시 강사",
+      "is_active": true,
+      "sessions": [
+        {
+          "id": "demo-phone-1",
+          "starts_at": "2026-09-17T11:00:00+09:00",
+          "ends_at": "2026-09-17T12:00:00+09:00"
+        }
+      ]
+    },
+    {
+      "id": "demo-art",
+      "title": "색으로 만나는 나의 하루",
+      "category": "문화",
+      "place_id": "demo-room-a",
+      "description": "그림을 처음 그려도 괜찮아요. 좋아하는 색으로 오늘의 마음을 표현해 보세요.",
+      "instructor": "예시 강사",
+      "is_active": true,
+      "sessions": [
+        {
+          "id": "demo-art-1",
+          "starts_at": "2026-09-17T13:30:00+09:00",
+          "ends_at": "2026-09-17T15:00:00+09:00"
+        }
+      ]
+    },
+    {
+      "id": "demo-music",
+      "title": "함께 부르는 가을 음악회",
+      "category": "행사",
+      "place_id": "demo-hall",
+      "description": "친숙한 노래와 함께 이웃을 만나는 시간이에요. 편하게 들러 주세요.",
+      "instructor": "예시 진행자",
+      "is_active": true,
+      "sessions": [
+        {
+          "id": "demo-music-1",
+          "starts_at": "2026-09-17T15:00:00+09:00",
+          "ends_at": "2026-09-17T16:00:00+09:00"
+        }
+      ]
+    }
   ]
 }
