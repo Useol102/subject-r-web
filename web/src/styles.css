@@ -13,3 +13,21 @@
 /* 장소 검색: 어르신이 화면 키보드로 치기 쉽도록 크게 */
 .place-search{max-width:760px}.search-field-large{padding:6px 10px 6px 22px;border:2px solid #cbd8c6;border-radius:16px;max-width:none;color:#557247}.search-field-large:focus-within{border-color:var(--green);box-shadow:0 0 0 4px #28644922}.search-field-large input{min-height:66px;font-size:24px;padding:8px 4px}.search-field-large input:focus-visible{outline:none}.search-field-large input::-webkit-search-cancel-button{display:none}.search-clear{display:flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:50%;background:#eef3ea;color:#4e6656;flex-shrink:0}.search-clear:hover{background:#e2eadc}.search-hint{margin-top:10px;font-size:15px;color:var(--muted)}.search-hint strong{color:var(--dark);letter-spacing:.12em}.search-count{font-size:17px;font-weight:600;color:#3d5936;margin:-8px 0 16px}.large-type .search-field-large input{font-size:28px}.large-type .search-hint,.large-type .search-count{font-size:20px}
 @media(max-width:600px){.search-field-large input{font-size:20px;min-height:56px}.search-clear{width:48px;height:48px}.search-hint{font-size:13px}}
+/* 터치 화면(패드·휴대폰) 대응. 키오스크 하드웨어가 태블릿일 가능성이 높다. */
+button,a,label,select,summary{touch-action:manipulation}
+.kiosk{padding-bottom:calc(85px + env(safe-area-inset-bottom,0px))}
+.kiosk-footer{padding-bottom:max(9px,env(safe-area-inset-bottom,0px))}
+@media(max-width:900px){input,select,textarea{font-size:16px}.admin-search,.editor-form input,.editor-form select,.editor-form textarea,.connection-form input,.inline-form input,.dispatch-form select{font-size:16px}}
+@media(min-width:601px) and (max-width:900px){.admin-shell{display:block}.sidebar{position:static;width:100%;padding:15px 18px;display:block;border-right:0;border-bottom:1px solid var(--line)}.sidebar>.brand{margin-bottom:13px}.sidebar-label,.sidebar-bottom{display:none}.sidebar nav{flex-direction:row;gap:6px;overflow-x:auto}.nav-item{flex:1;justify-content:center;white-space:nowrap;padding:13px 10px;font-size:13px}.nav-dot{display:none}.admin-body{margin-left:0}.admin-main{max-width:none}}
+@media(max-width:800px){.welcome-art{transform:scale(.8)}}
+@media(max-width:600px){.welcome-art{display:none}.welcome{min-height:0;margin-bottom:16px}.welcome h1{font-size:31px;margin:10px 0}.today-row strong{width:calc(100% - 32px)}.kiosk{padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))}}
+/* 주 이용자가 고령층이라 본문 글씨를 한 단계 굵게 쓴다.
+   주의: 윈도우 기본 글꼴(맑은 고딕)은 400·700 두 굵기뿐이라 500 은 400 으로 떨어진다.
+   (:root 에 font-synthesis:none 이 있어 가짜 굵게도 만들지 않는다.)
+   그래서 키오스크에서 꼭 읽어야 하는 글은 600 으로 둔다 — 맑은 고딕에서는 700 로 그려진다. */
+:root{font-weight:500}
+.welcome p,.action-card p,.page-title p,.program-card>p,.program-meta,.place-card p,
+.detail-description,.detail-facts>div,.directions li,.scan-illustration p,.modal p,
+.inline-message,.search-hint,.search-count,.today-row .row-place,.chip,.empty,
+.kiosk-footer button,.back-link,.access-note,.map-placeholder,.place-highlight small{font-weight:600}
+.micro,.demo-strip,.header-right,.art-caption{font-weight:500}
