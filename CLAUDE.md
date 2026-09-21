@@ -159,6 +159,9 @@ npm --prefix web run build
 화면 기준선: **360 · 390 · 414 · 600 · 601 · 700 · 768 · 820 · 900 · 1024 · 1180 · 1366px 에서 가로 스크롤 없음.**
 이 숫자가 줄어들면 뭔가 깨진 것이다.
 
+PR 을 올리면 같은 5개를 GitHub Actions(`.github/workflows/web-verify.yml`)가 자동으로 돌린다.
+검사를 더하거나 뺄 때는 **이 목록과 워크플로 파일을 같이** 고친다. 한쪽만 고치면 기준이 둘로 갈라진다.
+
 `npm --prefix web test` 가 `'vitest' is not recognized` 로 실패하면 코드 문제가 아니라
 `node_modules` 가 `vitest` 추가 전에 설치된 것이다. `npm --prefix web install` 을 한 번 돌린다.
 

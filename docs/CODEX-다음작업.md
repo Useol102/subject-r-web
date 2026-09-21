@@ -54,6 +54,7 @@
 | 현행 ERD (테이블 6개) | `docs/ERD-현행.dbml` |
 | **태블릿·모바일 터치 화면 대응** | `web/src/styles.css` 끝부분 |
 | **고령층용 글씨 굵기 상향** | `web/src/styles.css` 끝부분 |
+| **PR 자동 검사 (GitHub Actions)** | `.github/workflows/web-verify.yml` |
 
 **검증 기준선** — 이 숫자가 줄면 뭔가 깨진 것이다.
 
@@ -114,6 +115,9 @@ npm --prefix web run build
 .\.venv\Scripts\python.exe -m alembic -c web-alembic.ini check
 .\.venv\Scripts\python.exe tools\check_encoding.py
 ```
+
+PR 을 올리면 GitHub Actions(`.github/workflows/web-verify.yml`)가 같은 5개를 자동으로 돌린다.
+**빨간불이면 머지하지 않는다.** 검사를 더하거나 뺄 때는 워크플로와 `CLAUDE.md` §10 목록을 같이 고친다.
 
 그리고 **이 파일의 §2·§3 을 갱신**한 뒤 같은 커밋에 넣는다. 갱신하지 않으면 다음 사람이 같은 일을 또 한다.
 
