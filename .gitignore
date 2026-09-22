@@ -5,3 +5,8 @@ __pycache__/
 node_modules/
 dist/
 *.log
+.pytest_cache/
+*.db
+*.db-shm
+*.db-wal
+output/

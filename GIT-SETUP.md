@@ -39,7 +39,9 @@ cd subject-r-web
 ```
 
 그다음 README의 빠른 시작을 따라간다.
-`.env`는 각자 만든다 (`fix-env.ps1`). DB 비밀번호가 사람마다 다르기 때문이다.
+현재 웹(SQLite)은 DB 비밀번호가 없다. 설정은 `WEB_DATABASE_URL`·`WEB_DEMO`·`WEB_ADMIN_KEY` 환경변수다 (`docs/WEB-START.md`).
+
+> 이 문서의 git 규칙은 지금도 유효하다. 옛 PostgreSQL 설치 절차는 `docs/archive/TEAM-SETUP.md` 에 있다.
 
 ---
 
@@ -48,12 +50,12 @@ cd subject-r-web
 ### 스키마를 바꿀 때
 
 ```powershell
-# 1. app/models.py 수정
-# 2. 마이그레이션 생성
-.\.venv\Scripts\alembic.exe revision --autogenerate -m "무엇을 바꿨는지"
+# 1. web_api/models.py 수정   (app/models.py 는 옛 코드다. 헷갈리지 말 것)
+# 2. 마이그레이션 생성 — -c web-alembic.ini 를 빼면 옛 PostgreSQL 설정이 돈다
+.\.venv\Scripts\python.exe -m alembic -c web-alembic.ini revision --autogenerate -m "무엇을 바꿨는지"
 # 3. 생성된 파일을 눈으로 확인   <- 빠뜨리지 말 것
 # 4. 적용
-.\.venv\Scripts\alembic.exe upgrade head
+.\.venv\Scripts\python.exe -m alembic -c web-alembic.ini upgrade head
 # 5. 커밋 (모델 + 마이그레이션 파일을 같이)
 ```
 
@@ -64,9 +66,9 @@ cd subject-r-web
 
 ```powershell
 git pull
-.\.venv\Scripts\pip.exe install -r requirements.txt   # 패키지가 늘었을 수 있다
-.\.venv\Scripts\alembic.exe upgrade head              # 스키마가 바뀌었을 수 있다
-.\.venv\Scripts\python.exe tools\preflight.py         # 정상인지 확인
+.\.venv\Scripts\pip.exe install -r requirements-web.txt                   # 패키지가 늘었을 수 있다
+.\.venv\Scripts\python.exe -m alembic -c web-alembic.ini upgrade head   # 스키마가 바뀌었을 수 있다
+npm --prefix web install                                                # 프런트 패키지
 ```
 
 `alembic upgrade head`를 빼먹으면 "내 DB에선 되는데"가 시작된다.
