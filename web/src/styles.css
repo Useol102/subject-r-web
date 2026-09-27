@@ -21,13 +21,17 @@ button,a,label,select,summary{touch-action:manipulation}
 @media(min-width:601px) and (max-width:900px){.admin-shell{display:block}.sidebar{position:static;width:100%;padding:15px 18px;display:block;border-right:0;border-bottom:1px solid var(--line)}.sidebar>.brand{margin-bottom:13px}.sidebar-label,.sidebar-bottom{display:none}.sidebar nav{flex-direction:row;gap:6px;overflow-x:auto}.nav-item{flex:1;justify-content:center;white-space:nowrap;padding:13px 10px;font-size:13px}.nav-dot{display:none}.admin-body{margin-left:0}.admin-main{max-width:none}}
 @media(max-width:800px){.welcome-art{transform:scale(.8)}}
 @media(max-width:600px){.welcome-art{display:none}.welcome{min-height:0;margin-bottom:16px}.welcome h1{font-size:31px;margin:10px 0}.today-row strong{width:calc(100% - 32px)}.kiosk{padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))}}
-/* 주 이용자가 고령층이라 본문 글씨를 한 단계 굵게 쓴다.
+/* 주 이용자가 고령층이라 본문 글씨를 굵게 쓴다. (2026-09-27 실제 기기 확인 후 한 단계 더 올림)
    주의: 윈도우 기본 글꼴(맑은 고딕)은 400·700 두 굵기뿐이라 500 은 400 으로 떨어진다.
    (:root 에 font-synthesis:none 이 있어 가짜 굵게도 만들지 않는다.)
-   그래서 키오스크에서 꼭 읽어야 하는 글은 600 으로 둔다 — 맑은 고딕에서는 700 로 그려진다. */
-:root{font-weight:500}
+   그래서 키오스크에서 꼭 읽어야 하는 글은 700 으로 둔다 — 어느 글꼴에서나 확실히 굵어진다.
+   패드(노토 산스·애플 SD 산돌고딕)에는 중간 굵기가 다 있어 600 도 그대로 보인다. */
+:root{font-weight:600}
 .welcome p,.action-card p,.page-title p,.program-card>p,.program-meta,.place-card p,
 .detail-description,.detail-facts>div,.directions li,.scan-illustration p,.modal p,
 .inline-message,.search-hint,.search-count,.today-row .row-place,.chip,.empty,
-.kiosk-footer button,.back-link,.access-note,.map-placeholder,.place-highlight small{font-weight:600}
-.micro,.demo-strip,.header-right,.art-caption{font-weight:500}
+.kiosk-footer button,.back-link,.access-note,.map-placeholder,.place-highlight small,
+.today-row strong,.program-time,.tag,.action-bottom,.card-link,.eyebrow,.count,
+.floor-box,.place-card h2,.detail-facts strong{font-weight:700}
+.micro,.demo-strip,.header-right,.art-caption,.brand small,label small,
+.place-card .muted,.map-placeholder span,.location{font-weight:600}

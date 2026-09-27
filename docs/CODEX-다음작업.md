@@ -53,7 +53,7 @@
 | 시각 문자열 형식 통일 (`iso_z`) | `web_api/models.py` |
 | 현행 ERD (테이블 6개) | `docs/ERD-현행.dbml` |
 | **태블릿·모바일 터치 화면 대응** | `web/src/styles.css` 끝부분 |
-| **고령층용 글씨 굵기 상향** | `web/src/styles.css` 끝부분 |
+| **고령층용 글씨 굵기 상향** (2026-09-27 한 단계 더) | `web/src/styles.css` 끝부분 |
 | **PR 자동 검사 (GitHub Actions)** | `.github/workflows/web-verify.yml` |
 
 **검증 기준선** — 이 숫자가 줄면 뭔가 깨진 것이다.
