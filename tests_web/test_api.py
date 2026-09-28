@@ -1,5 +1,6 @@
 """기관·로봇 데이터가 없는 상태에서 웹 계약과 저장 무결성을 검증한다."""
 import re
+import secrets
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -177,6 +178,47 @@ def test_staff_password_locks_admin_even_in_demo(database):
         headers = {"X-Admin-Key": "1234"}
         assert client.get("/api/admin/catalog", headers=headers).status_code == 200
         assert client.post("/api/admin/demo/seed", headers=headers).status_code == 200
+    app.state.engine.dispose()
+
+
+def test_staff_failure_limit_is_per_client_and_does_not_lock_public_api(database):
+    key = secrets.token_urlsafe(16)
+    app = create_app(database[0], demo=True, admin_key=key)
+    wrong = {"X-Admin-Key": key + "-wrong"}
+    correct = {"X-Admin-Key": key}
+    with (TestClient(app, client=("192.0.2.10", 50000)) as first,
+          TestClient(app, client=("192.0.2.11", 50001)) as second):
+        for _ in range(4):
+            assert first.get("/api/admin/catalog", headers=wrong).status_code == 401
+        blocked = first.get("/api/admin/catalog", headers=wrong)
+        assert blocked.status_code == 429
+        assert blocked.headers["Retry-After"] == "30"
+        # 잠금 중에는 정답도 검사하지 않아 추측 결과가 노출되지 않는다.
+        assert first.get("/api/admin/catalog", headers=correct).status_code == 429
+        assert second.get("/api/admin/catalog", headers=wrong).status_code == 401
+        assert second.get("/api/admin/catalog", headers=correct).status_code == 200
+        assert first.get("/api/snapshot").status_code == 200
+    app.state.engine.dispose()
+
+
+def test_staff_success_clears_failures_after_cooldown(database, monkeypatch):
+    clock = [1000.0]
+    monkeypatch.setattr("web_api.main.monotonic", lambda: clock[0])
+    key = secrets.token_urlsafe(16)
+    app = create_app(database[0], demo=True, admin_key=key)
+    wrong = {"X-Admin-Key": key + "-wrong"}
+    correct = {"X-Admin-Key": key}
+    with TestClient(app) as client:
+        for _ in range(4):
+            assert client.get("/api/admin/catalog", headers=wrong).status_code == 401
+        assert client.get("/api/admin/catalog", headers=correct).status_code == 200
+        for _ in range(4):
+            assert client.get("/api/admin/catalog", headers=wrong).status_code == 401
+        assert client.get("/api/admin/catalog", headers=wrong).status_code == 429
+        clock[0] += 31
+        assert client.get("/api/admin/catalog", headers=correct).status_code == 200
+        for _ in range(4):
+            assert client.get("/api/admin/catalog", headers=wrong).status_code == 401
     app.state.engine.dispose()
 
 

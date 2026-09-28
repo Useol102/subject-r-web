@@ -4,10 +4,13 @@ import json
 import os
 import secrets
 from datetime import datetime, timedelta, timezone
+from math import ceil
 from pathlib import Path
+from threading import Lock
+from time import monotonic
 from uuid import uuid4
 
-from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import select, update
@@ -20,6 +23,9 @@ from .schemas import (AttendanceIn, CatalogIn, PlaceIn, ProgramIn, ProgramSessio
                       TripIn, TripState)
 
 ROOT = Path(__file__).resolve().parent.parent
+STAFF_FAILURE_LIMIT = 5
+STAFF_COOLDOWN_SECONDS = 30
+STAFF_MAX_CLIENTS = 1024
 
 
 def record(row):
@@ -33,12 +39,14 @@ def create_app(database_url: str | None = None, demo: bool | None = None, admin_
     engine = make_engine(database_url)
     app = FastAPI(title="Subject R · 이동형 키오스크 웹 API", version="0.1.0")
     app.state.engine = engine
+    staff_failures: dict[str, tuple[int, float]] = {}
+    staff_failures_lock = Lock()
 
     def db():
         with Session(engine) as session:
             yield session
 
-    def staff(x_admin_key: str = Header(default="")):
+    def staff(request: Request, x_admin_key: str = Header(default="")):
         """직원 화면 API 의 잠금.
 
         WEB_ADMIN_KEY 를 설정하면 **데모에서도** 잠긴다. 현장에 놓고 쓰는 화면이라
@@ -46,7 +54,34 @@ def create_app(database_url: str | None = None, demo: bool | None = None, admin_
         고칠 수 있다. 키를 안 정한 채로 실데이터 모드를 켜는 것도 막는다.
         """
         if admin_key:
-            if not secrets.compare_digest(x_admin_key, admin_key):
+            address = request.client.host if request.client else "unknown"
+            with staff_failures_lock:
+                now = monotonic()
+                record = staff_failures.get(address)
+                if record and record[1] <= now:
+                    staff_failures.pop(address)
+                    record = None
+                if record and record[0] >= STAFF_FAILURE_LIMIT:
+                    retry_after = max(1, ceil(record[1] - now))
+                    raise HTTPException(429, "잠시 후 다시 시도해 주세요.",
+                                        headers={"Retry-After": str(retry_after)})
+                if secrets.compare_digest(x_admin_key, admin_key):
+                    staff_failures.pop(address, None)
+                    return
+
+                count = (record[0] if record else 0) + 1
+                staff_failures[address] = (count, now + STAFF_COOLDOWN_SECONDS)
+                if len(staff_failures) > STAFF_MAX_CLIENTS:
+                    # 오래된 주소를 비워 메모리 사용량을 제한한다.
+                    expired = [host for host, (_, until) in staff_failures.items() if until <= now]
+                    for host in expired:
+                        staff_failures.pop(host)
+                    if len(staff_failures) > STAFF_MAX_CLIENTS:
+                        oldest = min(staff_failures, key=lambda host: staff_failures[host][1])
+                        staff_failures.pop(oldest)
+                if count >= STAFF_FAILURE_LIMIT:
+                    raise HTTPException(429, "잠시 후 다시 시도해 주세요.",
+                                        headers={"Retry-After": str(STAFF_COOLDOWN_SECONDS)})
                 raise HTTPException(401, "직원 비밀번호를 확인해 주세요.")
         elif not demo:
             raise HTTPException(401, "서버에 직원 비밀번호(WEB_ADMIN_KEY)가 설정되지 않았습니다.")
