@@ -39,8 +39,17 @@ def create_app(database_url: str | None = None, demo: bool | None = None, admin_
             yield session
 
     def staff(x_admin_key: str = Header(default="")):
-        if not demo and (not admin_key or not secrets.compare_digest(x_admin_key, admin_key)):
-            raise HTTPException(401, "직원 연결 키를 확인해 주세요.")
+        """직원 화면 API 의 잠금.
+
+        WEB_ADMIN_KEY 를 설정하면 **데모에서도** 잠긴다. 현장에 놓고 쓰는 화면이라
+        "데모니까 열어둔다" 가 그대로 운영으로 넘어가면 지나가는 사람이 프로그램을
+        고칠 수 있다. 키를 안 정한 채로 실데이터 모드를 켜는 것도 막는다.
+        """
+        if admin_key:
+            if not secrets.compare_digest(x_admin_key, admin_key):
+                raise HTTPException(401, "직원 비밀번호를 확인해 주세요.")
+        elif not demo:
+            raise HTTPException(401, "서버에 직원 비밀번호(WEB_ADMIN_KEY)가 설정되지 않았습니다.")
 
     def require_demo():
         if not demo:
@@ -111,7 +120,8 @@ def create_app(database_url: str | None = None, demo: bool | None = None, admin_
     @app.get("/api/health")
     def health(session: Session = Depends(db)):
         session.execute(select(Place.id).limit(1))
-        return {"status": "ok", "database": "sqlite", "demo": demo}
+        # staff_locked 로 "비밀번호를 켜고 띄웠는지" 를 현장에서 바로 확인한다.
+        return {"status": "ok", "database": "sqlite", "demo": demo, "staff_locked": bool(admin_key)}
 
     @app.get("/api/snapshot")
     def snapshot(session: Session = Depends(db)):

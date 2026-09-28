@@ -10,3 +10,5 @@ dist/
 *.db-shm
 *.db-wal
 output/
+# 직원 화면 비밀번호. 저장소에 올리지 않는다.
+web-admin-key.txt

@@ -35,3 +35,10 @@ button,a,label,select,summary{touch-action:manipulation}
 .floor-box,.place-card h2,.detail-facts strong{font-weight:700}
 .micro,.demo-strip,.header-right,.art-caption,.brand small,label small,
 .place-card .muted,.map-placeholder span,.location{font-weight:600}
+/* 직원 화면 잠금. 기존 .panel / .connection-form 을 그대로 쓰고 가운데 배치만 더한다. */
+.staff-gate{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px}
+.staff-gate .panel{width:100%;max-width:430px;margin:0}
+.staff-gate .panel-heading h2 svg{color:#7e9670}
+.staff-gate .connection-form p{font-size:13px}
+.staff-gate .primary{align-self:flex-start}
+.staff-gate code{background:#f1f5ee;border-radius:5px;padding:1px 5px;font-size:12px}

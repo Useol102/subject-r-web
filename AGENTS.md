@@ -16,6 +16,7 @@
 - 로봇 제어, 경로 계산, 비전/AI, 엘리베이터 제어는 다른 팀 범위다. 웹은 계약이 확정되면 연결한다.
 - 실제 로봇으로 명령을 보내는 코드는 아직 없다. 이동 요청은 `trip`으로 부르고 데모 상태를 자동 완료로 위조하지 않는다.
 - 장소/프로그램은 비활성화로 숨긴다. 이력 보호를 위해 물리 삭제하지 않는다. 가져오기는 ID 기준 병합, 전체 검증 후 한 번에 커밋한다.
+- 직원 화면(`/admin`)은 `WEB_ADMIN_KEY` 로 잠근다. 키가 설정돼 있으면 데모에서도 잠긴다. 비밀번호는 `web-admin-key.txt`(커밋 금지)에서 읽고, 코드·문서·커밋 메시지에 적지 않는다. 직원용 API 를 새로 만들면 반드시 `dependencies=[Depends(staff)]` 를 붙인다. 화면 잠금은 안내일 뿐이고 검사는 서버가 한다.
 - 데모는 로컬 전용이다. 기본 바인딩 127.0.0.1을 유지한다. 실데이터 모드에서는 직원 쓰기에 `WEB_ADMIN_KEY`를 요구하고 미연동 출결/이동을 거부한다.
 - 외부 CDN, 온라인 지도, 클라우드 런타임 의존성을 추가하지 않는다. 설치 후 LAN에서 실행할 수 있어야 한다.
 - 변경 후 `python -m pytest tests_web -q`, `npm --prefix web test`, `npm --prefix web run build`, `python -m alembic -c web-alembic.ini check`, `python tools/check_encoding.py`를 실행한다.

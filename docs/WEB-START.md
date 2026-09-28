@@ -28,22 +28,58 @@ AGENTS.md            이 저장소의 현재 웹 작업 규칙
 
 기존 `app/`, `alembic/`, `schema/`는 PostgreSQL/PostGIS 설계 참고 자료로 보존했다. 새 계획에서 사용자는 저장소를 SQLite로 변경하기로 선택했다.
 
+## 처음 한 번 (새 PC 설치)
+
+저장소에는 `.venv` 와 `node_modules` 가 없다. 새 PC에서는 직접 만든다.
+**Git**, **Python 3.12**(설치 첫 화면에서 `Add python.exe to PATH` 체크), **Node.js 22 LTS** 를 먼저 설치하고 PowerShell을 새로 연다.
+
+```powershell
+git clone https://github.com/Useol102/subject-r-web.git
+cd subject-r-web
+
+py -m venv .venv
+.\.venv\Scripts\python.exe -m pip install --upgrade pip
+.\.venv\Scripts\python.exe -m pip install -r requirements-web.txt
+npm --prefix web install
+```
+
+`.\.venv\Scripts\python.exe 용어가 인식되지 않습니다` 는 저장소 폴더 밖이거나 `.venv` 를 아직 안 만든 것이다.
+
 ## 실행
 
-PowerShell에서 저장소 루트 기준:
-
 ```powershell
-.\.venv\Scripts\python.exe -m alembic -c web-alembic.ini upgrade head
-.\.venv\Scripts\python.exe -m uvicorn web_api.main:app --host 127.0.0.1 --port 8000
+.\start-web.ps1              # 이 PC 에서만 (127.0.0.1)
+.\start-web.ps1 -Lan         # 폰·패드에서도 볼 때. 접속할 주소를 알려준다
+.\start-web.ps1 -SkipBuild   # 화면을 안 고쳤을 때 빌드 생략
 ```
 
-다른 터미널에서:
+스크립트가 비밀번호 설정 → DB 업그레이드 → 화면 빌드 → 서버 실행을 한 번에 한다.
+
+프런트를 고치며 개발할 때만 Vite 개발 서버를 따로 쓴다:
 
 ```powershell
-Set-Location web
-npm install
-npm run dev
+npm --prefix web run dev
 ```
+
+### 직원 화면 비밀번호
+
+직원 화면(`/admin`)은 주소는 그대로지만 비밀번호를 물어본다.
+
+- 비밀번호는 **`web-admin-key.txt`** 에서 읽는다. 파일이 없으면 스크립트가 `1234` 로 만든다.
+- 바꾸려면 그 파일 내용만 고친다. `.gitignore` 에 있어 깃허브에 올라가지 않는다.
+- 서버는 `WEB_ADMIN_KEY` 가 설정돼 있으면 **데모에서도** 직원 API를 잠근다.
+- 입력한 비밀번호는 그 탭에만 남는다(`sessionStorage`). 탭을 닫으면 다시 물어본다.
+- 실제 회원 정보를 넣기 전에 **반드시 바꾸고**, `WEB_DEMO=false` 도 같이 켠다.
+
+### 폰·패드에서 열 때
+
+`-Lan` 으로 띄우고, 스크립트가 알려주는 **사설 IP**(`192.168.x.x` 등) 주소로 접속한다.
+
+- 주소는 **`http://` 로 시작**해야 한다. `https` 로 치면 사파리가 "보안 연결할 수 없다"며 막는다.
+- 공인 IP로는 닿지 않는다. **포트포워딩을 열지 말 것** — 서버가 인터넷 전체에 노출된다.
+- iOS 18 이상은 설정 → 앱 → Safari → **로컬 네트워크** 허용이 필요하다.
+- 게스트·기관 와이파이는 기기 간 통신을 막는다. 폰 핫스팟에 PC를 붙이고 IP를 다시 확인한다.
+- 확인이 끝나면 `Ctrl+C` 로 서버를 끈다.
 
 - 이용자 화면: `http://127.0.0.1:5173/`
 - 직원 화면: `http://127.0.0.1:5173/admin`
@@ -55,8 +91,8 @@ API를 직접 실행할 때는 `http://127.0.0.1:8000/admin`도 빌드된 `web/d
 
 - `WEB_DATABASE_URL=sqlite:///./web-data.db`
 - `WEB_DEMO=true`
-- `WEB_ADMIN_KEY`는 데모에서는 비워둘 수 있다.
-- 실데이터 모드에서는 `WEB_DEMO=false`와 `WEB_ADMIN_KEY`를 지정해야 직원 변경 API를 쓸 수 있다.
+- `WEB_ADMIN_KEY` — 설정하면 **데모에서도** 직원 API가 잠긴다. `.\start-web.ps1` 이 `web-admin-key.txt` 에서 읽어 넘긴다. 비워두면 로컬 데모는 열린 채로 돈다(처음 설치할 때 막히지 않도록).
+- 실데이터 모드에서는 `WEB_DEMO=false`와 `WEB_ADMIN_KEY`를 **둘 다** 지정해야 직원 변경 API를 쓸 수 있다. 키 없이 실데이터 모드를 켜면 직원 API가 전부 401이다.
 
 ## 화면 사용 흐름
 
@@ -117,7 +153,7 @@ npm --prefix web run build
 
 PR 을 올리면 GitHub Actions(`.github/workflows/web-verify.yml`)가 같은 5개를 자동으로 돌린다.
 
-현재 검증 결과: 가로 스크롤 없음(360·390·414·600·601·700·768·820·900·1024·1180·1366px), API 테스트 20개 통과, 프런트 테스트 55개 통과(스캐너 13, 한글 검색 16, 영수증 8, 회차 반복 18), 웹 TypeScript/Vite 빌드 통과, Alembic 빈 diff 통과, 인코딩 검사 통과.
+현재 검증 결과: 가로 스크롤 없음(360·390·414·600·601·700·768·820·900·1024·1180·1366px), API 테스트 23개 통과, 프런트 테스트 55개 통과(스캐너 13, 한글 검색 16, 영수증 8, 회차 반복 18), 웹 TypeScript/Vite 빌드 통과, Alembic 빈 diff 통과, 인코딩 검사 통과.
 
 바코드 입력은 실제 브라우저에서 스캐너 속도(글자당 10ms + Enter)와 사람 타자 속도(200ms)를 각각 흘려보내 확인했다. 스캐너 속도만 출석으로 잡히고, 사람 타자는 무시된다.
 
