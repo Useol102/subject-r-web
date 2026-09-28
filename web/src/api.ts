@@ -9,6 +9,9 @@ export type Snapshot = {demo:boolean; places:Place[]; programs:Program[]; sessio
 export type CatalogSession = Omit<Session,'program_id'|'session_day_kst'>
 export type Catalog = {version:2; places:Place[]; programs:(Program&{sessions:CatalogSession[]})[]}
 
+/** 서버가 돌려준 상태 코드를 가진 오류. 401 은 직원 비밀번호 문제다. */
+export type ApiError = Error & { status?:number }
+
 export async function request<T>(path:string, method='GET', data?:unknown):Promise<T> {
   const controller = new AbortController()
   const timeout = window.setTimeout(()=>controller.abort(),10000)
@@ -18,7 +21,8 @@ export async function request<T>(path:string, method='GET', data?:unknown):Promi
       body:data === undefined ? undefined : JSON.stringify(data)})
     if (!response.ok) {
       const error = await response.json().catch(()=>null)
-      throw new Error(typeof error?.detail === 'string' ? error.detail : '입력값과 연결 상태를 확인해 주세요.')
+      // 상태 코드를 붙여 보낸다. 직원 화면이 401(비밀번호) 과 나머지 오류를 구분해야 한다.
+      throw Object.assign(new Error(typeof error?.detail === 'string' ? error.detail : '입력값과 연결 상태를 확인해 주세요.'), {status:response.status})
     }
     return await response.json()
   } catch (error) {

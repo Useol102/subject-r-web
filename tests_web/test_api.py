@@ -156,6 +156,48 @@ def test_attendance_dedup_and_non_demo_code_rejection(seeded):
     assert seeded.post("/api/attendance/demo", json={**payload, "code": "real-member"}).status_code == 422
 
 
+def test_staff_password_locks_admin_even_in_demo(database):
+    """데모여도 비밀번호를 설정하면 직원 API 가 잠긴다.
+
+    현장에 놓고 쓰는 화면이라 "데모니까 열어둔다" 가 그대로 운영으로 넘어가면
+    지나가는 사람이 프로그램을 고칠 수 있다.
+    """
+    app = create_app(database[0], demo=True, admin_key="1234")
+    with TestClient(app) as client:
+        # 이용자 화면은 그대로 열려 있어야 한다
+        assert client.get("/api/snapshot").status_code == 200
+        assert client.get("/api/health").json()["staff_locked"] is True
+
+        assert client.get("/api/admin/catalog").status_code == 401
+        assert client.get("/api/admin/catalog", headers={"X-Admin-Key": "12345"}).status_code == 401
+        assert client.get("/api/admin/catalog", headers={"X-Admin-Key": ""}).status_code == 401
+        # 쓰기도 막힌다. 읽기만 막고 끝내면 의미가 없다.
+        assert client.post("/api/admin/demo/seed").status_code == 401
+
+        headers = {"X-Admin-Key": "1234"}
+        assert client.get("/api/admin/catalog", headers=headers).status_code == 200
+        assert client.post("/api/admin/demo/seed", headers=headers).status_code == 200
+    app.state.engine.dispose()
+
+
+def test_demo_without_password_stays_open_for_local_setup(database):
+    """비밀번호를 안 정하면 로컬 데모는 그대로 열린다. 처음 설치할 때 막히면 안 된다."""
+    app = create_app(database[0], demo=True, admin_key="")
+    with TestClient(app) as client:
+        assert client.get("/api/health").json()["staff_locked"] is False
+        assert client.get("/api/admin/catalog").status_code == 200
+    app.state.engine.dispose()
+
+
+def test_live_mode_without_password_refuses_staff_api(database):
+    """실데이터 모드인데 비밀번호가 없으면 열어주지 않는다."""
+    app = create_app(database[0], demo=False, admin_key="")
+    with TestClient(app) as client:
+        assert client.get("/api/admin/catalog").status_code == 401
+        assert client.get("/api/admin/catalog", headers={"X-Admin-Key": "1234"}).status_code == 401
+    app.state.engine.dispose()
+
+
 def test_live_mode_requires_staff_and_blocks_unconnected_devices(database):
     app = create_app(database[0], demo=False, admin_key="test-key")
     with TestClient(app) as client:

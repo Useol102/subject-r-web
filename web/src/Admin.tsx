@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Activity, ArrowRight, ArrowUpRight, BookOpen, Check, ChevronRight, CircleHelp, Database, Download, FileJson, LayoutDashboard, MapPin, Plus, Radio, RefreshCw, Route, Save, Settings2, Upload, X } from 'lucide-react'
-import { day, floorName, request, states, time, type Catalog, type CatalogSession, type Place, type Program, type Snapshot, type Trip } from './api'
+import { Activity, ArrowRight, ArrowUpRight, BookOpen, Check, ChevronRight, CircleHelp, Database, Download, FileJson, LayoutDashboard, Lock, MapPin, Plus, Radio, RefreshCw, Route, Save, Settings2, Upload, X } from 'lucide-react'
+import { day, floorName, request, states, time, type ApiError, type Catalog, type CatalogSession, type Place, type Program, type Snapshot, type Trip } from './api'
 import { searchByName } from './hangulSearch'
 import { describeKst, generateSessions, type GeneratedSession } from './recurrence'
 
@@ -12,6 +12,9 @@ export default function Admin({data,reload,connectionError}:Props){
   const [catalog,setCatalog]=useState<Catalog>({version:2,places:[],programs:[]})
   const [notice,setNotice]=useState('')
   const [adminError,setAdminError]=useState('')
+  // 서버가 401 을 주면 비밀번호 화면을 띄운다 (WEB_ADMIN_KEY 설정 시)
+  const [locked,setLocked]=useState(false)
+  const [wrongKey,setWrongKey]=useState(false)
   const [busy,setBusy]=useState(false)
   const [destination,setDestination]=useState('')
   const [editor,setEditor]=useState<Place|Program|'new-place'|'new-program'|null>(null)
@@ -19,10 +22,11 @@ export default function Admin({data,reload,connectionError}:Props){
   // 회차 패널을 연 프로그램 ID
   const [sessionOf,setSessionOf]=useState<string|null>(null)
   const loadAdmin=useCallback(async()=>{
-    try{const [t,c]=await Promise.all([request<Trip[]>('/admin/trips'),request<Catalog>('/admin/catalog')]);setTrips(t);setCatalog(c);setAdminError('')}
-    catch(e){setAdminError((e as Error).message)}
+    try{const [t,c]=await Promise.all([request<Trip[]>('/admin/trips'),request<Catalog>('/admin/catalog')]);setTrips(t);setCatalog(c);setAdminError('');setLocked(false)}
+    catch(e){const error=e as ApiError;setLocked(error.status===401);setAdminError(error.message)}
   },[])
-  useEffect(()=>{void loadAdmin();const timer=setInterval(()=>void loadAdmin(),5000);return()=>clearInterval(timer)},[loadAdmin])
+  // 잠겨 있으면 5초마다 두드리지 않는다. 비밀번호를 넣는 순간 다시 확인한다.
+  useEffect(()=>{void loadAdmin();if(locked)return;const timer=setInterval(()=>void loadAdmin(),5000);return()=>clearInterval(timer)},[loadAdmin,locked])
   const run=async(action:()=>Promise<unknown>,message:string)=>{
     if(busy)return
     setBusy(true);setNotice('')
@@ -92,6 +96,24 @@ export default function Admin({data,reload,connectionError}:Props){
   async function exportFile(){
     await run(async()=>{const data=await request<Catalog>('/admin/catalog');const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='subject-r-catalog.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)},'프로그램·장소 JSON을 내보냈습니다.')
   }
+  if(locked)return <div className="admin-shell staff-gate">
+    <section className="panel">
+      <div className="panel-heading"><h2><Lock size={19}/>직원 화면</h2></div>
+      <form className="connection-form" onSubmit={e=>{
+        e.preventDefault()
+        const form=e.currentTarget
+        sessionStorage.setItem('staff-key',String(new FormData(form).get('key')||''))
+        setWrongKey(true);form.reset()
+        void loadAdmin()
+      }}>
+        <p>직원 전용 화면입니다. 비밀번호를 입력해 주세요. 이 탭을 닫으면 다시 물어봅니다.</p>
+        <label>비밀번호<input type="password" name="key" autoFocus autoComplete="current-password" placeholder="비밀번호"/></label>
+        {wrongKey&&<p className="micro" role="alert">{adminError||'비밀번호가 맞지 않습니다.'}</p>}
+        <button className="primary" type="submit">들어가기</button>
+        <a className="text-button" href="/">이용자 화면으로 돌아가기</a>
+      </form>
+    </section>
+  </div>
   return <div className="admin-shell"><a className="skip-link" href="#admin-main">본문 바로가기</a><aside className="sidebar"><a className="brand" href="/admin"><span className="brand-symbol">R<span>·</span></span><span>Subject R<small>직원 워크스페이스</small></span></a><div className="sidebar-label">공간을 잇는 다정한 기술</div><nav>{sections.map(([key,label,Icon])=><button key={key} className={section===key?'nav-item selected':'nav-item'} aria-current={section===key?'page':undefined} onClick={()=>change(key)}><Icon size={20}/>{label}{section===key&&<span className="nav-dot"/>}</button>)}</nav><div className="sidebar-bottom"><div className="local-note"><span className="status-dot"/><div>로컬 웹 서비스<small>인터넷 없이, 같은 공간에서</small></div></div><a className="kiosk-open" href="/" target="_blank" rel="noreferrer">이용자 화면 열기 <ArrowUpRight size={18}/></a><p>SUBJECT R · WEB WORKSPACE</p></div></aside>
     <div className="admin-body"><header className="admin-header"><div><span className="breadcrumb">워크스페이스</span><ChevronRight size={14}/><strong>{sections.find(x=>x[0]===section)?.[1]}</strong></div><span className="demo-pill">{data?.demo?'DEMO · 예시 환경':'기관 데이터 환경'}</span></header><main id="admin-main" className="admin-main">
       <div className="admin-page-heading"><div><div className="eyebrow">{new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'long',timeZone:'Asia/Seoul'})}</div><h1>{sections.find(x=>x[0]===section)?.[1]}</h1><p>{section==='overview'?'오늘의 안내와 로봇 이동 요청을 한곳에서 관리하세요.':section==='programs'?'프로그램 정보를 등록하면 이용자 화면에 바로 반영됩니다.':section==='places'?'층과 장소, 안내 문구를 실제 기관 정보로 채워 주세요.':'팀에서 받은 데이터를 연결하고 연동 준비 상태를 확인하세요.'}</p></div><button className="secondary" disabled={busy} onClick={()=>void run(()=>Promise.all([reload(),loadAdmin()]),'최신 데이터를 확인했습니다.')}><RefreshCw size={17}/>새로고침</button></div>
@@ -107,7 +129,7 @@ export default function Admin({data,reload,connectionError}:Props){
       {(section==='programs'||section==='places')&&<>
         {editor?<section className="panel editor"><div className="panel-heading"><h2>{typeof editor==='string'?'새 정보 등록':'정보 수정'}</h2><button className="text-button" onClick={()=>setEditor(null)}><X size={18}/>닫기</button></div><Editor key={typeof editor==='string'?editor:editor.id} value={editor} places={catalog.places} busy={busy} onSave={save}/></section>:sessionProgram?<SessionPanel key={sessionProgram.id} program={sessionProgram} places={catalog.places} busy={busy} onClose={()=>setSessionOf(null)} onStatus={setStatus} onRepeat={addSessions}/>:<section className="panel"><div className="panel-heading"><input className="admin-search" aria-label="목록 검색" placeholder={section==='programs'?'프로그램 이름 검색':'장소 이름 검색'} value={search} onChange={e=>setSearch(e.target.value)}/><button className="primary" disabled={busy||!!adminError||!!connectionError} onClick={()=>setEditor(section==='programs'?'new-program':'new-place')}><Plus size={18}/>{section==='programs'?'프로그램 등록':'장소 등록'}</button></div><div className="table-wrap"><table><thead><tr>{(section==='programs'?['프로그램','일정 (한국 시간)','장소','공개 상태','관리']:['장소','층','구분','공개 상태','관리']).map(c=><th key={c}>{c}</th>)}</tr></thead><tbody>{section==='programs'?searchByName(catalog.programs,search,p=>({name:p.title,category:p.category})).map(p=><tr key={p.id}><td><strong>{p.title}</strong><small className="cell-sub">{p.category}</small></td><td>{p.sessions.length?day(p.sessions[0].starts_at):'회차 없음'}<small className="cell-sub">{p.sessions.length?`${time(p.sessions[0].starts_at)} – ${time(p.sessions[0].ends_at)}${p.sessions.length>1?` 외 ${p.sessions.length-1}회`:''}`:'-'}</small></td><td>{catalog.places.find(x=>x.id===p.place_id)?.name}</td><td><span className={p.is_active?'state state-arrived':'state'}>{p.is_active?'공개':'숨김'}</span></td><td><button className="secondary small" onClick={()=>setEditor(p)}>수정</button> <button className="secondary small" onClick={()=>setSessionOf(p.id)}>회차 {p.sessions.length}</button></td></tr>):searchByName(catalog.places,search,p=>p).map(p=><tr key={p.id}><td><strong>{p.name}</strong><small className="cell-sub">{p.id}</small></td><td>{floorName(p.floor)}</td><td>{p.category}</td><td><span className={p.is_active?'state state-arrived':'state'}>{p.is_active?'공개':'숨김'}</span></td><td><button className="secondary small" onClick={()=>setEditor(p)}>수정</button></td></tr>)}</tbody></table></div>{!(section==='programs'?catalog.programs.filter(p=>p.title.includes(search)):catalog.places.filter(p=>p.name.includes(search))).length&&<div className="empty compact">표시할 항목이 없습니다. 새 정보를 등록해 주세요.</div>}</section>}
       </>}
-      {section==='connections'&&<><section className="panel"><div className="panel-heading"><h2><Activity size={19}/>연결 준비 현황</h2><span className="tag">웹 담당 범위</span></div><div className="integration-grid">{[['로봇 · 시뮬레이션','미연결','이동 요청 규격, 위치와 상태 응답을 기다리고 있어요.'],['기관 출결 시스템','미연결','QR·바코드 규격과 출결 API를 확인해야 해요.'],['실내 지도 · 경로','자료 대기','층별 지도와 검증된 장소 안내문이 필요해요.'],['안내문 출력','브라우저 인쇄','프린터 기종과 용지 폭은 현장에서 확인해요.']].map(([title,state,desc])=><div className="integration-card" key={title}><span className="tag">{state}</span><h3>{title}</h3><p>{desc}</p></div>)}</div></section><div className="dashboard-grid"><section className="panel"><div className="panel-heading"><h2><Database size={19}/>프로그램 · 장소 데이터</h2><span className="tag">SQLite</span></div><div className="data-transfer"><FileJson size={38}/><h3>데이터가 도착하면, 여기서 연결하세요.</h3><p>내보낸 JSON을 양식으로 사용하세요. 같은 ID는 수정하고, 새로운 ID는 추가합니다. 파일에서 빠진 항목은 삭제하지 않습니다.</p><div className="button-row"><button className="secondary" disabled={busy||!!adminError||!!connectionError} onClick={()=>void exportFile()}><Download size={18}/>JSON 내보내기</button><label className={`primary upload-label ${busy||adminError||connectionError?'disabled':''}`}><Upload size={18}/>JSON 가져오기<input type="file" accept=".json,application/json" aria-label="JSON 가져오기" disabled={busy||!!adminError||!!connectionError} onChange={e=>{const file=e.target.files?.[0];if(file)void importFile(file);e.target.value=''}}/></label></div><p className="micro">저장소: web-data.db · 예시 ID는 demo-로 시작합니다.<br/>개인정보·회원 정보는 가져오기 대상이 아닙니다.</p></div></section><section className="panel"><div className="panel-heading"><h2>직원 연결 설정</h2></div><form className="connection-form" onSubmit={e=>{e.preventDefault();const f=new FormData(e.currentTarget);sessionStorage.setItem('staff-key',String(f.get('key')||''));void loadAdmin();setNotice('현재 탭에 연결 키를 저장했습니다.')}}><p>로컬 데모에서는 키 없이 둘러볼 수 있습니다. 데모를 끄면 서버에 설정한 직원 키가 필요합니다.</p><label>직원 연결 키<input type="password" name="key" autoComplete="off" placeholder="WEB_ADMIN_KEY"/></label><button className="secondary" type="submit"><Save size={17}/>이 탭에 적용</button><button className="text-button" type="button" onClick={()=>{sessionStorage.removeItem('staff-key');void loadAdmin();setNotice('이 탭의 연결 키를 지웠습니다.')}}>연결 키 지우기</button></form></section></div></>}
+      {section==='connections'&&<><section className="panel"><div className="panel-heading"><h2><Activity size={19}/>연결 준비 현황</h2><span className="tag">웹 담당 범위</span></div><div className="integration-grid">{[['로봇 · 시뮬레이션','미연결','이동 요청 규격, 위치와 상태 응답을 기다리고 있어요.'],['기관 출결 시스템','미연결','QR·바코드 규격과 출결 API를 확인해야 해요.'],['실내 지도 · 경로','자료 대기','층별 지도와 검증된 장소 안내문이 필요해요.'],['안내문 출력','브라우저 인쇄','프린터 기종과 용지 폭은 현장에서 확인해요.']].map(([title,state,desc])=><div className="integration-card" key={title}><span className="tag">{state}</span><h3>{title}</h3><p>{desc}</p></div>)}</div></section><div className="dashboard-grid"><section className="panel"><div className="panel-heading"><h2><Database size={19}/>프로그램 · 장소 데이터</h2><span className="tag">SQLite</span></div><div className="data-transfer"><FileJson size={38}/><h3>데이터가 도착하면, 여기서 연결하세요.</h3><p>내보낸 JSON을 양식으로 사용하세요. 같은 ID는 수정하고, 새로운 ID는 추가합니다. 파일에서 빠진 항목은 삭제하지 않습니다.</p><div className="button-row"><button className="secondary" disabled={busy||!!adminError||!!connectionError} onClick={()=>void exportFile()}><Download size={18}/>JSON 내보내기</button><label className={`primary upload-label ${busy||adminError||connectionError?'disabled':''}`}><Upload size={18}/>JSON 가져오기<input type="file" accept=".json,application/json" aria-label="JSON 가져오기" disabled={busy||!!adminError||!!connectionError} onChange={e=>{const file=e.target.files?.[0];if(file)void importFile(file);e.target.value=''}}/></label></div><p className="micro">저장소: web-data.db · 예시 ID는 demo-로 시작합니다.<br/>개인정보·회원 정보는 가져오기 대상이 아닙니다.</p></div></section><section className="panel"><div className="panel-heading"><h2>직원 연결 설정</h2></div><form className="connection-form" onSubmit={e=>{e.preventDefault();const f=new FormData(e.currentTarget);sessionStorage.setItem('staff-key',String(f.get('key')||''));void loadAdmin();setNotice('현재 탭에 연결 키를 저장했습니다.')}}><p>서버에 <code>WEB_ADMIN_KEY</code> 를 설정하면 데모에서도 이 화면에 비밀번호가 필요합니다. 비밀번호는 현재 탭에만 저장되고, 탭을 닫으면 지워집니다.</p><label>직원 비밀번호<input type="password" name="key" autoComplete="off" placeholder="WEB_ADMIN_KEY"/></label><button className="secondary" type="submit"><Save size={17}/>이 탭에 적용</button><button className="text-button" type="button" onClick={()=>{sessionStorage.removeItem('staff-key');void loadAdmin();setNotice('이 탭의 연결 키를 지웠습니다.')}}>연결 키 지우기</button></form></section></div></>}
       <footer className="admin-footer"><span>Subject R · 함께 만드는 이동형 안내</span><span>실제 기관 데이터 및 장치 연동 준비 중</span></footer>
     </main></div></div>
 }
