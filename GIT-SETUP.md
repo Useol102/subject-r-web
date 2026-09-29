@@ -1,5 +1,8 @@
 # GitHub 올리기
 
+> 이 저장소는 이미 GitHub에 있다. 새 PC 설치와 현재 SQLite 웹 실행은
+> [`docs/WEB-START.md`](docs/WEB-START.md)를 따른다. 아래 저장소 생성 절차는 초기 기록이다.
+
 ## 1. GitHub에서 저장소 만들기
 
 github.com → New repository
@@ -94,7 +97,7 @@ git push -u origin feature/dashboard
 | 대상 | 이유 |
 |---|---|
 | `.env` | DB 비밀번호, SECRET_KEY |
-| `.venv/` | 수백 MB. 각자 `setup-python-env.ps1`로 만든다 |
+| `.venv/` | 수백 MB. 각자 `docs/WEB-START.md`의 설치 절차로 만든다 |
 | `__pycache__/`, `*.pyc` | 빌드 산물 |
 | `node_modules/` | 프론트 의존성 |
 | `*.log` | 로그 |
