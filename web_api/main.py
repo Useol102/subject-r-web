@@ -17,7 +17,7 @@ from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from .db import make_engine
+from .db import DEFAULT_DATABASE_URL, make_engine
 from .models import KST, Attendance, Place, Program, ProgramSession, Robot, Trip, day_kst, iso_z, utc_now
 from .schemas import (AttendanceIn, CatalogIn, PlaceIn, ProgramIn, ProgramSessionIn, SessionBatchIn,
                       TripIn, TripState)
@@ -33,7 +33,7 @@ def record(row):
 
 
 def create_app(database_url: str | None = None, demo: bool | None = None, admin_key: str | None = None):
-    database_url = database_url or os.getenv("WEB_DATABASE_URL", "sqlite:///./web-data.db")
+    database_url = database_url or os.getenv("WEB_DATABASE_URL", DEFAULT_DATABASE_URL)
     demo = demo if demo is not None else os.getenv("WEB_DEMO", "true").lower() == "true"
     admin_key = admin_key if admin_key is not None else os.getenv("WEB_ADMIN_KEY", "")
     engine = make_engine(database_url)
