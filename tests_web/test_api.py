@@ -253,6 +253,23 @@ def test_live_mode_requires_staff_and_blocks_unconnected_devices(database):
     app.state.engine.dispose()
 
 
+def test_live_mode_does_not_show_demo_catalog_as_real_data(database):
+    demo_app = create_app(database[0], demo=True, admin_key="")
+    with TestClient(demo_app) as client:
+        assert client.post("/api/admin/demo/seed").status_code == 200
+    demo_app.state.engine.dispose()
+
+    key = secrets.token_urlsafe(16)
+    live_app = create_app(database[0], demo=False, admin_key=key)
+    with TestClient(live_app) as client:
+        snapshot = client.get("/api/snapshot").json()
+        assert snapshot["demo"] is False
+        assert all(snapshot[group] == [] for group in ("places", "programs", "sessions", "robots"))
+        # 직원 화면에는 이력을 남겨 데이터 상태를 확인할 수 있다.
+        assert client.get("/api/admin/catalog", headers={"X-Admin-Key": key}).json()["places"]
+    live_app.state.engine.dispose()
+
+
 def test_migration_roundtrip_and_model_alignment(database):
     url, cfg = database
     command.check(cfg)

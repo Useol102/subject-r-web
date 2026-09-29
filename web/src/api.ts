@@ -9,20 +9,26 @@ export type Snapshot = {demo:boolean; places:Place[]; programs:Program[]; sessio
 export type CatalogSession = Omit<Session,'program_id'|'session_day_kst'>
 export type Catalog = {version:2; places:Place[]; programs:(Program&{sessions:CatalogSession[]})[]}
 
-/** 서버가 돌려준 상태 코드를 가진 오류. 401 은 직원 비밀번호 문제다. */
-export type ApiError = Error & { status?:number }
+/** 서버가 돌려준 상태 코드를 가진 오류. 401·429 는 직원 비밀번호 문제다. */
+export type ApiError = Error & { status?:number; retryAfter?:number }
 
 export async function request<T>(path:string, method='GET', data?:unknown):Promise<T> {
   const controller = new AbortController()
   const timeout = window.setTimeout(()=>controller.abort(),10000)
   try {
+    const headers:Record<string,string>={'Content-Type':'application/json'}
+    // 이용자 API 에 직원 비밀번호를 보내지 않는다.
+    if(path.startsWith('/admin/'))headers['X-Admin-Key']=sessionStorage.getItem('staff-key')||''
     const response = await fetch('/api'+path,{method, signal:controller.signal,
-      headers:{'Content-Type':'application/json', 'X-Admin-Key':sessionStorage.getItem('staff-key')||''},
+      headers,
       body:data === undefined ? undefined : JSON.stringify(data)})
     if (!response.ok) {
       const error = await response.json().catch(()=>null)
-      // 상태 코드를 붙여 보낸다. 직원 화면이 401(비밀번호) 과 나머지 오류를 구분해야 한다.
-      throw Object.assign(new Error(typeof error?.detail === 'string' ? error.detail : '입력값과 연결 상태를 확인해 주세요.'), {status:response.status})
+      const retryAfter=Number(response.headers.get('Retry-After'))
+      const detail=typeof error?.detail === 'string' ? error.detail : '입력값과 연결 상태를 확인해 주세요.'
+      const message=response.status===429&&retryAfter>0
+        ?`시도가 많습니다. ${retryAfter}초 후 다시 입력해 주세요.`:detail
+      throw Object.assign(new Error(message), {status:response.status,retryAfter:retryAfter>0?retryAfter:undefined})
     }
     return await response.json()
   } catch (error) {

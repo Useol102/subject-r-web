@@ -168,6 +168,16 @@ def create_app(database_url: str | None = None, demo: bool | None = None, admin_
             select(ProgramSession).join(Program)
             .where(Program.is_active.is_(True)).order_by(ProgramSession.starts_at)))
         robots = list(session.scalars(select(Robot)))
+        if not demo:
+            # 데모 DB 를 실데이터 모드로 다시 열어도 예시가 기관 정보처럼 보이지 않게 한다.
+            places = [p for p in places if not p.id.startswith("demo-")]
+            place_ids = {p.id for p in places}
+            programs = [p for p in programs if not p.id.startswith("demo-") and p.place_id in place_ids]
+            program_ids = {p.id for p in programs}
+            sessions = [s for s in sessions if not s.id.startswith("demo-")
+                        and s.program_id in program_ids and s.place_id in place_ids]
+            robots = [r for r in robots if not r.id.startswith("demo-")
+                      and r.home_place_id in place_ids and r.current_place_id in place_ids]
         # 직원 이력·출결 기록은 공개 키오스크 응답에 포함하지 않는다.
         return {"demo": demo, "places": [record(p) for p in places],
                 "programs": [record(p) for p in programs], "sessions": [record(s) for s in sessions],
