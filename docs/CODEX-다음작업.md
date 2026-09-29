@@ -47,7 +47,7 @@ npm --prefix web install
 | `py` 를 못 찾음 | 파이썬 PATH 미체크. 다시 설치하거나 `python` 으로 시도 |
 | `npm` 인식 안 됨 | PowerShell 을 새로 열지 않은 것 |
 
-⛔ `setup-python-env.ps1`, `init-db.ps1`, `fix-env.ps1` 은 **옛 PostgreSQL 기준**이다. 쓰지 말 것.
+⛔ 옛 PostgreSQL 설치·복구 스크립트 5개는 `scripts/archive/`에 보존했다. 현재 웹에는 쓰지 말 것.
 
 ---
 
@@ -120,6 +120,7 @@ npm --prefix web install
 | **실데이터 모드의 예시 정보 비공개** | `web_api/main.py` 의 `/api/snapshot` — `demo-` 항목 제외, DB 이력 보존 |
 | **현장 사용 검토·인수인계** | `Claude Code - Codex - 소통.md` |
 | **실행 스크립트** | `start-web.ps1` |
+| **옛 PostgreSQL 스크립트 격리** | `scripts/archive/` — 설치·DB 생성·환경 복구·비밀번호 재설정 스크립트 5개 보존 |
 
 **검증 기준선** — 이 숫자가 줄면 뭔가 깨진 것이다.
 
@@ -135,7 +136,8 @@ API 26개 · 프런트 60개(스캐너 13 + 한글 검색 16 + 영수증 8 + 회
 
 > 2026-09-29 Claude Code 가 PR #3(실패 제한·잠그기·현장 검토)을 검토했다. 검사 5개 통과,
 > 브라우저로 잠금 흐름(첫 진입 호출 0회 → 5회 실패 30초 잠금 → 해제 → 잠그기)까지 확인했다.
-> 아래 ▶ 1~5 는 **Codex 가 순서대로 한다.** 한 번에 하나씩, 작업마다 브랜치·PR 을 따로 연다.
+> 옛 `.ps1` 정리는 PR #4 로 끝났다(`scripts/archive/`).
+> 아래 ▶ 1~4 는 **Codex 가 순서대로 한다.** 한 번에 하나씩, 작업마다 브랜치·PR 을 따로 연다.
 
 ### ▶ Codex 가 지금 할 일 — 다른 팀 자료 없이 된다
 
@@ -173,14 +175,7 @@ API 26개 · 프런트 60개(스캐너 13 + 한글 검색 16 + 영수증 8 + 회
 - 해제 스크립트로 완전히 되돌릴 수 있어야 한다. 사용법을 `docs/WEB-START.md` 에 적는다.
 - 실제 PC 에서만 확인할 수 있는 부분이다. PR 본문에 "현장 PC 확인 필요" 를 명시한다.
 
-**4. 옛 `.ps1` 스크립트 정리**
-- `setup-python-env.ps1`, `init-db.ps1`, `fix-env.ps1`, `reset-pgpassword.ps1`, `setup-windows.ps1`,
-  `fix-claude-cli.ps1` 중 **옛 PostgreSQL 기준인 것**을 `scripts/archive/` 로 옮긴다.
-  하나씩 열어 확인하고 옮긴다. **지우지 않는다.**
-- 옮긴 폴더에 `README.md` 로 "옛 계획용, 실행하지 말 것" 을 남긴다.
-- 옮긴 뒤에도 UTF-8 **BOM** 유지. 문서에서 옛 경로를 가리키는 곳이 있으면 고친다.
-
-**5. 소통 메모를 `docs/` 로 옮기기**
+**4. 소통 메모를 `docs/` 로 옮기기**
 - 저장소 맨 위의 `Claude Code - Codex - 소통.md` 는 이름에 공백이 있어 PowerShell 에서 다루기 불편하다.
   `docs/소통-Claude-Codex.md` 로 옮기고(`git mv`), 이 파일 §4 와 `CLAUDE.md` §1 문서 표에서 가리킨다.
 - 앞으로 Claude Code ↔ Codex 사이의 검토·질문은 이 파일에 이어 쓴다.
