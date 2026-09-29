@@ -1,5 +1,7 @@
 from sqlalchemy import create_engine, event
 
+DEFAULT_DATABASE_URL = "sqlite:///./web-data.db"
+
 
 def make_engine(url: str):
     engine = create_engine(url, connect_args={"check_same_thread": False})

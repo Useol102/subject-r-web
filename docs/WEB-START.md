@@ -55,6 +55,31 @@ npm --prefix web install
 
 스크립트가 비밀번호 설정 → DB 업그레이드 → 화면 빌드 → 서버 실행을 한 번에 한다.
 
+### SQLite DB 백업·복원
+
+서버가 실행 중이어도 저장소 루트에서 `.\backup-web.ps1`을 실행하면 SQLite 백업 API로 일관된 사본을 만든다. PowerShell 명령은 다음과 같다.
+
+```powershell
+.\backup-web.ps1
+.\backup-web.ps1 -Keep 30
+```
+
+사본은 `backups/web-data-YYYYMMDD-HHMMSS.db`에 한국 시각으로 저장되고 최근 30개만 남는다. `backups/`에는 회원·출결 기록이 들어갈 수 있어 Git에 올리지 않는다. PC 고장에 대비하려면 필요한 사본을 접근이 제한된 외부 저장장치에도 보관한다. 원본 DB 경로는 서버와 같은 `WEB_DATABASE_URL`을 따르며, 기본값은 `web-data.db`다. 원본 파일이 없으면 백업을 실패로 종료하고 빈 DB를 만들지 않는다.
+
+복원할 때는 **먼저 서버를 완전히 종료**한다. 기존 DB와 같은 이름의 `-wal`, `-shm` 파일이 남아 있다면 기존 DB와 함께 별도 폴더에 보존해 복원할 DB 옆에 남지 않게 한다. 그다음 선택한 사본을 기본 DB 위치로 복사한다.
+
+```powershell
+$before = Join-Path backups ("before-restore-" + (Get-Date -Format "yyyyMMdd-HHmmss"))
+New-Item -ItemType Directory -Path $before | Out-Null
+foreach ($file in @("web-data.db", "web-data.db-wal", "web-data.db-shm")) {
+    if (Test-Path -LiteralPath $file) { Move-Item -LiteralPath $file -Destination $before }
+}
+Copy-Item .\backups\web-data-YYYYMMDD-HHMMSS.db .\web-data.db
+.\start-web.ps1
+```
+
+`YYYYMMDD-HHMMSS`는 복원할 사본의 파일명으로 바꾼다. `WEB_DATABASE_URL`로 다른 DB 경로를 사용한다면 위의 원본·복원 경로를 모두 그 경로에 맞춘다. 서버를 켠 뒤 직원 화면에서 장소·프로그램·회차를 확인한다.
+
 프런트를 고치며 개발할 때만 Vite 개발 서버를 따로 쓴다:
 
 ```powershell
@@ -153,7 +178,7 @@ npm --prefix web run build
 
 PR 을 올리면 GitHub Actions(`.github/workflows/web-verify.yml`)가 같은 5개를 자동으로 돌린다.
 
-현재 검증 결과: 가로 스크롤 없음(360·390·414·600·601·700·768·820·900·1024·1180·1366px), API 테스트 26개 통과, 프런트 테스트 60개 통과(스캐너 13, 한글 검색 16, 영수증 8, 회차 반복 18, API 2, 회차 선택 3), 웹 TypeScript/Vite 빌드 통과, Alembic 빈 diff 통과, 인코딩 검사 통과.
+현재 검증 결과: 가로 스크롤 없음(360·390·414·600·601·700·768·820·900·1024·1180·1366px), API 테스트 31개 통과, 프런트 테스트 60개 통과(스캐너 13, 한글 검색 16, 영수증 8, 회차 반복 18, API 2, 회차 선택 3), 웹 TypeScript/Vite 빌드 통과, Alembic 빈 diff 통과, 인코딩 검사 통과.
 
 바코드 입력은 실제 브라우저에서 스캐너 속도(글자당 10ms + Enter)와 사람 타자 속도(200ms)를 각각 흘려보내 확인했다. 스캐너 속도만 출석으로 잡히고, 사람 타자는 무시된다.
 
