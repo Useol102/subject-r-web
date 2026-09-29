@@ -40,7 +40,17 @@ if ($env:WEB_ADMIN_KEY -eq "1234") {
 }
 
 & $python -m alembic -c web-alembic.ini upgrade head
-if (-not $SkipBuild) { npm --prefix web run build }
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "[중단] 데이터베이스 업그레이드에 실패했습니다." -ForegroundColor Red
+    exit $LASTEXITCODE
+}
+if (-not $SkipBuild) {
+    npm --prefix web run build
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "[중단] 화면 빌드에 실패했습니다." -ForegroundColor Red
+        exit $LASTEXITCODE
+    }
+}
 
 $bind = "127.0.0.1"
 if ($Lan) {
