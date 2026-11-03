@@ -4,12 +4,13 @@ import type { MenuItem } from './menu'
 import { useIdle } from './useIdle'
 import StartScreen from './screens/StartScreen'
 import MenuScreen from './screens/MenuScreen'
+import ConfirmScreen from './screens/ConfirmScreen'
 import PayScreen, { type PayMethod } from './screens/PayScreen'
 import DoneScreen from './screens/DoneScreen'
 import IdleDialog from './screens/IdleDialog'
 
-/** 화면 흐름: 시작 → 메뉴 → 결제 → 완료 → 시작 */
-type Screen = 'start' | 'menu' | 'pay' | 'done'
+/** 화면 흐름: 시작 → 메뉴 선택 → 주문 확인 → 결제 방식 선택 → 주문 완료 → 시작 */
+type Screen = 'start' | 'menu' | 'confirm' | 'pay' | 'done'
 export type DineType = 'store' | 'togo'
 
 /** 조작이 없을 때 "계속하시겠어요?" 를 띄우기까지의 시간 */
@@ -41,8 +42,8 @@ export default function App() {
     setScreen('start')
   }, [])
 
-  // 메뉴·결제 화면에서만 유휴 감시. 완료 화면은 자체 카운트다운으로 돌아간다.
-  useIdle(screen === 'menu' || screen === 'pay', IDLE_MS, () => setIdleWarning(true))
+  // 메뉴·확인·결제 화면에서만 유휴 감시. 완료 화면은 자체 카운트다운으로 돌아간다.
+  useIdle(screen === 'menu' || screen === 'confirm' || screen === 'pay', IDLE_MS, () => setIdleWarning(true))
 
   const start = (type: DineType) => {
     setDineType(type)
@@ -75,11 +76,23 @@ export default function App() {
           onRemove={remove}
           onClear={clear}
           onHome={reset}
-          onCheckout={() => setScreen('pay')}
+          onCheckout={() => setScreen('confirm')}
+        />
+      )}
+      {screen === 'confirm' && (
+        <ConfirmScreen
+          dineType={dineType}
+          lines={lines}
+          onChangeDine={setDineType}
+          onChangeQty={change}
+          onRemove={remove}
+          onBack={() => setScreen('menu')}
+          onHome={reset}
+          onNext={() => setScreen('pay')}
         />
       )}
       {screen === 'pay' && (
-        <PayScreen dineType={dineType} lines={lines} onBack={() => setScreen('menu')} onHome={reset} onComplete={complete} />
+        <PayScreen dineType={dineType} lines={lines} onBack={() => setScreen('confirm')} onHome={reset} onComplete={complete} />
       )}
       {screen === 'done' && order && <DoneScreen order={order} onHome={reset} />}
       {idleWarning && <IdleDialog seconds={IDLE_GRACE_S} onContinue={() => setIdleWarning(false)} onTimeout={reset} />}

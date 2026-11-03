@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { DineType } from '../App'
-import { cartTotals, formatWon, lineTotal, optionLabel, type CartLine } from '../cart'
+import { cartTotals, formatWon, type CartLine } from '../cart'
 
 export type PayMethod = 'card' | 'qr' | 'cash'
 
@@ -41,34 +41,19 @@ export default function PayScreen({ dineType, lines, onBack, onHome, onComplete 
   return (
     <div className="pay-layout">
       <header className="topbar">
-        <button type="button" className="btn ghost small" onClick={onBack} disabled={processing}>← 메뉴로</button>
+        <button type="button" className="btn ghost small" onClick={onBack} disabled={processing}>← 주문 확인으로</button>
         <span className="dine-badge">{dineType === 'store' ? '🪑 매장' : '🛍️ 포장'}</span>
         <button type="button" className="btn ghost small" onClick={onHome} disabled={processing}>처음으로</button>
       </header>
 
       <div className="pay-body">
-        <section className="pay-summary" aria-label="주문 내역">
-          <h2>주문 내역</h2>
-          <ul className="summary-list">
-            {lines.map((l) => (
-              <li key={l.key}>
-                <span className="summary-name">
-                  {l.item.name}
-                  {optionLabel(l) && <span className="summary-opt"> {optionLabel(l)}</span>}
-                </span>
-                <span className="summary-qty">× {l.qty}</span>
-                <span className="summary-price">{formatWon(lineTotal(l))}</span>
-              </li>
-            ))}
-          </ul>
-          <div className="summary-total">
-            <span>총 {totals.count}개</span>
-            <strong>{formatWon(totals.total)}</strong>
-          </div>
+        <section className="pay-summary pay-amount" aria-label="결제할 금액">
+          <span className="muted">결제할 금액 · {totals.count}개</span>
+          <strong className="pay-amount-num">{formatWon(totals.total)}</strong>
         </section>
 
         <section className="pay-methods" aria-label="결제 수단">
-          <h2>결제 수단을 선택해 주세요</h2>
+          <h2>어떻게 결제하시겠어요?</h2>
           <div className="method-grid">
             {METHODS.map((m) => (
               <button

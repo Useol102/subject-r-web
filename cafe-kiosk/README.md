@@ -1,6 +1,6 @@
 # 카페 주문 키오스크 (1차 · 프런트엔드만)
 
-메뉴 선택 → 옵션(온도·사이즈)·수량 → 장바구니 → 결제 수단 선택 → 주문 완료 화면까지의 흐름을 **프런트엔드만으로** 구현한 1차 결과물이다.
+교육용 카페 주문 키오스크 웹 1차 결과물이다. 화면 5개(시작 → 메뉴 선택 → 주문 확인 → 결제 방식 선택 → 주문 완료)를 **프런트엔드만으로** 구현했다.
 실제 결제·데이터베이스·백엔드 연동은 없다. 메뉴는 `src/menu.ts` 상수이고, 결제는 2초 뒤 완료되는 흉내다.
 
 > 이 폴더는 같은 저장소의 복지관 키오스크(`web/`, `web_api/`)와 **무관한 별도 앱**이다. 서로 코드를 공유하지 않는다.
@@ -26,15 +26,16 @@ npm run build     # tsc 타입 검사 + vite 빌드 → dist/
 
 ## 화면 흐름
 
-| 화면 | 파일 | 내용 |
-|---|---|---|
-| 시작 | `src/screens/StartScreen.tsx` | 매장 / 포장 선택 |
-| 메뉴 | `src/screens/MenuScreen.tsx` | 분류 탭, 메뉴 카드, 품절 표시, 담기 토스트 |
-| 옵션 | `src/screens/OptionSheet.tsx` | HOT/ICE, 기본/라지(+500원), 수량 |
-| 장바구니 | `src/screens/CartPanel.tsx` | 수량 +/−, 삭제, 전체 삭제, 합계, 결제하기. 900px 미만에선 아래 바로 접힘 |
-| 결제 | `src/screens/PayScreen.tsx` | 주문 내역, 결제 수단(카드·간편결제·현금), 진행 중 창 |
-| 완료 | `src/screens/DoneScreen.tsx` | 주문번호(001부터), 내역, 20초 뒤 처음으로 |
-| 유휴 | `src/screens/IdleDialog.tsx` | 60초 조작 없으면 "계속 주문하시겠어요?" → 15초 뒤 초기화 |
+| # | 화면 | 파일 | 내용 |
+|---|---|---|---|
+| 1 | 시작 | `src/screens/StartScreen.tsx` | 매장 / 포장 선택 |
+| 2 | 메뉴 선택 | `src/screens/MenuScreen.tsx` | 분류 탭, 메뉴 카드, 품절 표시, 담기 토스트 |
+|   | └ 옵션 창 | `src/screens/OptionSheet.tsx` | HOT/ICE, 기본/라지(+500원), 수량 |
+|   | └ 장바구니 | `src/screens/CartPanel.tsx` | 수량 +/−, 삭제, 전체 삭제, 합계. 900px 미만에선 아래 바로 접힘 |
+| 3 | 주문 확인 | `src/screens/ConfirmScreen.tsx` | 담은 메뉴를 크게 보여주고 수량 변경·삭제, 매장/포장 변경, 합계 |
+| 4 | 결제 방식 선택 | `src/screens/PayScreen.tsx` | 결제할 금액, 카드·간편결제·현금, 진행 중 창 |
+| 5 | 주문 완료 | `src/screens/DoneScreen.tsx` | 주문번호(001부터), 내역, 20초 뒤 처음으로 |
+| - | 유휴 안내 | `src/screens/IdleDialog.tsx` | 60초 조작 없으면 "계속 주문하시겠어요?" → 15초 뒤 초기화 |
 
 ## 구조 원칙
 

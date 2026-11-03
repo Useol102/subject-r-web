@@ -232,6 +232,24 @@ legend { padding: 0; }
   animation: spin .9s linear infinite;
 }
 
+/* 결제 화면: 금액만 크게 */
+.pay-layout .pay-body:has(.pay-amount) { grid-template-columns: minmax(0, 1fr); }
+.pay-amount { flex-direction: row; align-items: baseline; justify-content: space-between; font-size: 20px; }
+.pay-amount-num { font-size: 40px; font-weight: 800; color: var(--accent); }
+
+/* ── 주문 확인 화면 ─────────────────────────────────── */
+.confirm-body { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); }
+.confirm-title { font-size: 30px !important; }
+.confirm-list { display: flex; flex-direction: column; }
+.confirm-line {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(96px, auto) auto; align-items: center; gap: 16px;
+  padding: 16px 0; border-bottom: 1.5px dashed var(--line);
+}
+.confirm-info { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.confirm-name { font-size: 22px; font-weight: 800; }
+.confirm-opt { font-size: 16px; color: var(--muted); }
+.confirm-price { font-size: 22px; font-weight: 800; color: var(--brand); text-align: right; }
+
 /* ── 완료 화면 ──────────────────────────────────────── */
 .done { flex: 1; overflow-y: auto; display: flex; align-items: center; justify-content: center; padding: 24px 16px; background: radial-gradient(900px 500px at 50% 0%, var(--ok-soft) 0%, var(--bg) 60%); }
 .done-card { background: var(--surface); border-radius: 28px; padding: 36px 28px; width: min(560px, 100%); display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; box-shadow: var(--shadow); }
@@ -281,6 +299,7 @@ legend { padding: 0; }
   .cart:not(.open) .cart-total-row { display: none; }
   .toast { bottom: auto; top: 140px; }
   .pay-body { grid-template-columns: minmax(0, 1fr); }
+  .confirm-body { grid-template-columns: minmax(0, 1fr); }
 }
 
 /* 세로 키오스크(예: 1080×1920): 멀리서도 보이게 시작 화면을 키운다 */
@@ -319,4 +338,12 @@ legend { padding: 0; }
   .order-no { font-size: 60px; }
   .done-meta { gap: 16px; }
   .toast { white-space: normal; max-width: calc(100% - 32px); text-align: center; }
+  .topbar .btn { white-space: nowrap; padding: 0 14px; }
+  .pay-layout .topbar .dine-badge { display: none; }
+  .confirm-line { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "info x" "step price"; row-gap: 12px; }
+  .confirm-info { grid-area: info; }
+  .confirm-line .btn-x { grid-area: x; }
+  .confirm-line .stepper { grid-area: step; justify-self: start; }
+  .confirm-price { grid-area: price; }
+  .pay-amount-num { font-size: 32px; }
 }

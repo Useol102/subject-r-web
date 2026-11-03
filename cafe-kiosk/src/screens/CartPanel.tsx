@@ -57,7 +57,7 @@ export default function CartPanel({ lines, totals, open, onToggle, onChangeQty, 
           <strong className="cart-total">{formatWon(totals.total)}</strong>
         </div>
         <button type="button" className="btn primary xl" disabled={empty} onClick={onCheckout}>
-          {empty ? '메뉴를 담아 주세요' : `${formatWon(totals.total)} 결제하기`}
+          {empty ? '메뉴를 담아 주세요' : `${formatWon(totals.total)} 주문하기`}
         </button>
       </div>
     </aside>
