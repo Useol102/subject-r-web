@@ -94,7 +94,7 @@ describe('옵션', () => {
     expect(needsOptionSheet(cookie)).toBe(false)
   })
   it('옵션 문구', () => {
-    expect(optionLabel({ temperature: 'ICE', size: 'L' })).toBe('ICE · 라지')
+    expect(optionLabel({ temperature: 'ICE', size: 'L' })).toBe('ICE · 크게')
     expect(optionLabel({ temperature: 'HOT', size: 'R' })).toBe('HOT · 기본')
     expect(optionLabel({})).toBe('')
   })

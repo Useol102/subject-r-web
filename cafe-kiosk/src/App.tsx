@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
 import { addToCart, cartTotals, changeQty, nextOrderNumber, removeLine, type CartLine, type LineOptions } from './cart'
 import type { MenuItem } from './menu'
-import { useIdle } from './useIdle'
+import { useCountdown } from './useCountdown'
 import StartScreen from './screens/StartScreen'
 import MenuScreen from './screens/MenuScreen'
 import ConfirmScreen from './screens/ConfirmScreen'
@@ -13,9 +13,9 @@ import IdleDialog from './screens/IdleDialog'
 type Screen = 'start' | 'menu' | 'confirm' | 'pay' | 'done'
 export type DineType = 'store' | 'togo'
 
-/** 조작이 없을 때 "계속하시겠어요?" 를 띄우기까지의 시간 */
-const IDLE_MS = 60_000
-/** 안내창이 뜬 뒤 처음 화면으로 돌아가기까지의 시간 */
+/** 주문 중 화면의 제한 시간. 조작하면 다시 처음부터 센다 */
+const ORDER_SECONDS = 120
+/** 시간이 다 된 뒤 "시간을 늘릴까요?" 창이 기다리는 시간 */
 const IDLE_GRACE_S = 15
 
 export interface CompletedOrder {
@@ -34,16 +34,19 @@ export default function App() {
   const [lastOrderNo, setLastOrderNo] = useState(0)
   const [order, setOrder] = useState<CompletedOrder | null>(null)
   const [idleWarning, setIdleWarning] = useState(false)
+  const [paying, setPaying] = useState(false)
 
   const reset = useCallback(() => {
     setLines([])
     setOrder(null)
     setIdleWarning(false)
+    setPaying(false)
     setScreen('start')
   }, [])
 
-  // 메뉴·확인·결제 화면에서만 유휴 감시. 완료 화면은 자체 카운트다운으로 돌아간다.
-  useIdle(screen === 'menu' || screen === 'confirm' || screen === 'pay', IDLE_MS, () => setIdleWarning(true))
+  // 결제 진행 중에는 시간을 세지 않는다 (단말기 응답을 기다리는 중)
+  const counting = (screen === 'menu' || screen === 'confirm' || screen === 'pay') && !idleWarning && !paying
+  const timeLeft = useCountdown(counting, ORDER_SECONDS, () => setIdleWarning(true))
 
   const start = (type: DineType) => {
     setDineType(type)
@@ -56,11 +59,12 @@ export default function App() {
   const remove = (key: string) => setLines((ls) => removeLine(ls, key))
   const clear = () => setLines([])
 
-  /** 결제 화면에서 "결제 완료" 신호. 실제 결제는 없다 — 화면 흐름만 재현한다. */
+  /** 결제 완료 신호. 실제 결제는 없다 — 화면 흐름만 재현한다. */
   const complete = (method: PayMethod) => {
     const no = nextOrderNumber(lastOrderNo)
     setLastOrderNo(no)
     setOrder({ number: no, dineType, lines, total: cartTotals(lines).total, method, paidAt: new Date() })
+    setPaying(false)
     setScreen('done')
   }
 
@@ -71,18 +75,20 @@ export default function App() {
         <MenuScreen
           dineType={dineType}
           lines={lines}
+          timeLeft={timeLeft}
           onAdd={add}
           onChangeQty={change}
           onRemove={remove}
           onClear={clear}
           onHome={reset}
-          onCheckout={() => setScreen('confirm')}
+          onNext={() => setScreen('confirm')}
         />
       )}
       {screen === 'confirm' && (
         <ConfirmScreen
           dineType={dineType}
           lines={lines}
+          timeLeft={timeLeft}
           onChangeDine={setDineType}
           onChangeQty={change}
           onRemove={remove}
@@ -92,7 +98,15 @@ export default function App() {
         />
       )}
       {screen === 'pay' && (
-        <PayScreen dineType={dineType} lines={lines} onBack={() => setScreen('confirm')} onHome={reset} onComplete={complete} />
+        <PayScreen
+          lines={lines}
+          timeLeft={timeLeft}
+          paying={paying}
+          onPayingChange={setPaying}
+          onBack={() => setScreen('confirm')}
+          onHome={reset}
+          onComplete={complete}
+        />
       )}
       {screen === 'done' && order && <DoneScreen order={order} onHome={reset} />}
       {idleWarning && <IdleDialog seconds={IDLE_GRACE_S} onContinue={() => setIdleWarning(false)} onTimeout={reset} />}

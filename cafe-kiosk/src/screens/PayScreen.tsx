@@ -1,92 +1,135 @@
 import { useEffect, useState } from 'react'
-import type { DineType } from '../App'
 import { cartTotals, formatWon, type CartLine } from '../cart'
+import Header from './Header'
 
 export type PayMethod = 'card' | 'qr' | 'cash'
 
-const METHODS: { id: PayMethod; icon: string; name: string; desc: string }[] = [
-  { id: 'card', icon: '💳', name: '카드 결제', desc: '신용 · 체크카드' },
-  { id: 'qr', icon: '📱', name: '간편결제', desc: 'QR · 바코드 스캔' },
-  { id: 'cash', icon: '💵', name: '현금 결제', desc: '카운터에서 결제' },
-]
+export const METHOD_NAME: Record<PayMethod, string> = { card: '카드 결제', qr: '간편결제', cash: '카운터 결제' }
 
 interface Props {
-  dineType: DineType
   lines: CartLine[]
+  timeLeft: number
+  /** 결제 진행 창이 떠 있는지 (App 이 남은 시간을 멈추는 데 쓴다) */
+  paying: boolean
+  onPayingChange: (paying: boolean) => void
   onBack: () => void
   onHome: () => void
   onComplete: (method: PayMethod) => void
 }
 
-/** 결제 화면. 결제 수단을 고르고 "결제하기" 를 누르면 진행 중 화면을 잠깐 보여준 뒤 완료로 넘어간다.
- *  실제 결제 단말·PG 연동은 없다 (1차 결과물). */
-export default function PayScreen({ dineType, lines, onBack, onHome, onComplete }: Props) {
-  const [method, setMethod] = useState<PayMethod | null>(null)
-  const [processing, setProcessing] = useState(false)
+/** 단말기 응답을 흉내 내는 시간 */
+const FAKE_PAY_MS = 3500
+
+/**
+ * 결제 방식 선택. 실제 키오스크처럼 방식을 누르면 바로 안내 창이 뜨고, 잠시 뒤 완료된다.
+ * 실제 결제 단말·PG 연동은 없다.
+ */
+export default function PayScreen({ lines, timeLeft, paying, onPayingChange, onBack, onHome, onComplete }: Props) {
+  const [method, setMethod] = useState<PayMethod>('card')
   const totals = cartTotals(lines)
 
-  // 진행 중 화면을 2.2초 보여주고 완료로 넘어간다 (결제 단말 응답을 흉내 낸 것)
   useEffect(() => {
-    if (!processing || !method) return
-    const t = window.setTimeout(() => onComplete(method), 2200)
+    if (!paying) return
+    const t = window.setTimeout(() => onComplete(method), FAKE_PAY_MS)
     return () => window.clearTimeout(t)
-  }, [processing, method, onComplete])
+  }, [paying, method, onComplete])
 
-  const guide: Record<PayMethod, string> = {
-    card: '아래 단말기에 카드를 꽂거나 대 주세요',
-    qr: '휴대폰의 결제 바코드를 스캐너에 대 주세요',
-    cash: '주문번호를 들고 카운터로 와 주세요',
+  const choose = (m: PayMethod) => {
+    setMethod(m)
+    onPayingChange(true)
   }
 
   return (
-    <div className="pay-layout">
-      <header className="topbar">
-        <button type="button" className="btn ghost small" onClick={onBack} disabled={processing}>← 주문 확인으로</button>
-        <span className="dine-badge">{dineType === 'store' ? '🪑 매장' : '🛍️ 포장'}</span>
-        <button type="button" className="btn ghost small" onClick={onHome} disabled={processing}>처음으로</button>
-      </header>
-
-      <div className="pay-body">
-        <section className="pay-summary pay-amount" aria-label="결제할 금액">
-          <span className="muted">결제할 금액 · {totals.count}개</span>
-          <strong className="pay-amount-num">{formatWon(totals.total)}</strong>
-        </section>
-
-        <section className="pay-methods" aria-label="결제 수단">
-          <h2>어떻게 결제하시겠어요?</h2>
-          <div className="method-grid">
-            {METHODS.map((m) => (
-              <button
-                key={m.id}
-                type="button"
-                className={`method${method === m.id ? ' on' : ''}`}
-                aria-pressed={method === m.id}
-                onClick={() => setMethod(m.id)}
-                disabled={processing}
-              >
-                <span className="method-icon" aria-hidden="true">{m.icon}</span>
-                <span className="method-name">{m.name}</span>
-                <span className="method-desc">{m.desc}</span>
-              </button>
-            ))}
-          </div>
-          <button type="button" className="btn primary xl" disabled={!method || processing} onClick={() => setProcessing(true)}>
-            {method ? `${formatWon(totals.total)} 결제하기` : '결제 수단을 선택해 주세요'}
+    <div className="screen">
+      <Header title="결제 방식 선택" timeLeft={timeLeft} onHome={onHome} />
+      <main className="body">
+        <div className="pay-total">
+          <span>결제하실 금액</span>
+          <strong className="num">{formatWon(totals.total)}</strong>
+        </div>
+        <h2 className="body-title">결제 방식을 선택해 주세요</h2>
+        <div className="methods">
+          <button type="button" className="method" onClick={() => choose('card')}>
+            <svg className="method-icon" viewBox="0 0 64 64" aria-hidden="true"><rect x="6" y="14" width="52" height="36" rx="5" fill="none" stroke="currentColor" strokeWidth="4" /><rect x="6" y="22" width="52" height="7" fill="currentColor" /><rect x="14" y="38" width="14" height="5" rx="1" fill="currentColor" /></svg>
+            <span className="method-name">카드 결제</span>
+            <span className="method-desc">신용카드 · 체크카드</span>
           </button>
-          <p className="demo-note">체험용 화면입니다. 실제 결제는 이루어지지 않습니다.</p>
-        </section>
-      </div>
+          <button type="button" className="method" onClick={() => choose('qr')}>
+            <svg className="method-icon" viewBox="0 0 64 64" aria-hidden="true"><rect x="16" y="4" width="32" height="56" rx="6" fill="none" stroke="currentColor" strokeWidth="4" /><rect x="23" y="16" width="8" height="8" fill="currentColor" /><rect x="33" y="16" width="8" height="8" fill="currentColor" /><rect x="23" y="26" width="8" height="8" fill="currentColor" /><rect x="35" y="28" width="4" height="4" fill="currentColor" /><rect x="28" y="50" width="8" height="3" rx="1.5" fill="currentColor" /></svg>
+            <span className="method-name">간편결제</span>
+            <span className="method-desc">휴대폰 바코드 · QR</span>
+          </button>
+          <button type="button" className="method" onClick={() => choose('cash')}>
+            <svg className="method-icon" viewBox="0 0 64 64" aria-hidden="true"><rect x="4" y="16" width="56" height="32" rx="4" fill="none" stroke="currentColor" strokeWidth="4" /><circle cx="32" cy="32" r="7" fill="none" stroke="currentColor" strokeWidth="4" /><circle cx="14" cy="32" r="2.5" fill="currentColor" /><circle cx="50" cy="32" r="2.5" fill="currentColor" /></svg>
+            <span className="method-name">카운터 결제</span>
+            <span className="method-desc">현금 · 직원에게 결제</span>
+          </button>
+        </div>
+      </main>
+      <footer className="foot">
+        <button type="button" className="btn btn-gray btn-xl" onClick={onBack}>이전</button>
+        <span className="foot-note">교육용 연습 화면입니다. 실제로 결제되지 않습니다.</span>
+      </footer>
 
-      {processing && method && (
-        <div className="modal-backdrop" role="presentation">
-          <div className="modal center" role="dialog" aria-modal="true" aria-live="assertive">
-            <div className="spinner" aria-hidden="true" />
-            <h2>결제를 진행하고 있어요</h2>
-            <p className="muted">{guide[method]}</p>
-            <p className="muted small">결제가 끝날 때까지 화면을 벗어나지 마세요</p>
+      {paying && (
+        <div className="dim" role="presentation">
+          <div className="dialog pay-dialog" role="alertdialog" aria-modal="true" aria-labelledby="pay-title" aria-describedby="pay-desc">
+            <PayGuideArt method={method} />
+            <h2 id="pay-title" className="dialog-title">{GUIDE[method].title}</h2>
+            <p id="pay-desc" className="dialog-text">{GUIDE[method].text}</p>
+            <div className="progress" aria-hidden="true"><span /></div>
+            <div className="dialog-actions">
+              <button type="button" className="btn btn-gray" onClick={() => onPayingChange(false)}>결제 취소</button>
+            </div>
           </div>
         </div>
       )}
     </div>
+  )
+}
+
+const GUIDE: Record<PayMethod, { title: string; text: string }> = {
+  card: { title: '카드를 넣어 주세요', text: '화면 아래 카드 투입구에 카드를 끝까지 넣고, 결제가 끝날 때까지 빼지 마세요.' },
+  qr: { title: '바코드를 보여 주세요', text: '휴대폰 결제 화면의 바코드나 QR을 화면 아래 스캐너에 가까이 대 주세요.' },
+  cash: { title: '주문이 접수되고 있습니다', text: '잠시 뒤 주문번호가 나옵니다. 주문번호를 가지고 카운터에서 결제해 주세요.' },
+}
+
+/** 결제 안내 그림: 단말기에 카드 넣기 / 스캐너에 휴대폰 대기 / 카운터 */
+function PayGuideArt({ method }: { method: PayMethod }) {
+  return (
+    <svg className="guide-art" viewBox="0 0 200 120" aria-hidden="true">
+      {method === 'card' && (
+        <g>
+          <rect x="40" y="70" width="120" height="40" rx="6" fill="#374151" />
+          <rect x="62" y="80" width="76" height="6" rx="3" fill="#111827" />
+          <g className="guide-move">
+            <rect x="70" y="10" width="60" height="76" rx="6" fill="#1E3A6E" />
+            <rect x="80" y="20" width="14" height="10" rx="2" fill="#F2C94C" />
+          </g>
+        </g>
+      )}
+      {method === 'qr' && (
+        <g>
+          <rect x="50" y="88" width="100" height="22" rx="5" fill="#374151" />
+          <rect x="70" y="92" width="60" height="6" rx="3" fill="#D92D20" opacity=".8" />
+          <g className="guide-move">
+            <rect x="76" y="6" width="48" height="76" rx="8" fill="#111827" />
+            <rect x="82" y="14" width="36" height="58" rx="3" fill="#FFFFFF" />
+            <rect x="88" y="26" width="10" height="10" fill="#111827" />
+            <rect x="102" y="26" width="10" height="10" fill="#111827" />
+            <rect x="88" y="40" width="10" height="10" fill="#111827" />
+            <rect x="104" y="42" width="6" height="6" fill="#111827" />
+          </g>
+        </g>
+      )}
+      {method === 'cash' && (
+        <g>
+          <rect x="30" y="64" width="140" height="46" rx="6" fill="#374151" />
+          <rect x="30" y="56" width="140" height="12" rx="4" fill="#4B5563" />
+          <circle cx="100" cy="30" r="18" fill="#1E3A6E" />
+          <text x="100" y="37" textAnchor="middle" fontSize="20" fontWeight="700" fill="#FFFFFF">번호</text>
+        </g>
+      )}
+    </svg>
   )
 }

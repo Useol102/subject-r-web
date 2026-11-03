@@ -6,7 +6,7 @@ interface Props {
   onTimeout: () => void
 }
 
-/** 한동안 조작이 없을 때 띄우는 확인창. 남은 초가 0 이 되면 처음으로 돌아간다 */
+/** 남은 시간이 0 이 되면 띄우는 창. 여기서도 고르지 않으면 처음 화면으로 돌아간다 */
 export default function IdleDialog({ seconds, onContinue, onTimeout }: Props) {
   const [left, setLeft] = useState(seconds)
   useEffect(() => {
@@ -19,15 +19,16 @@ export default function IdleDialog({ seconds, onContinue, onTimeout }: Props) {
   }, [left, onTimeout])
 
   return (
-    <div className="modal-backdrop" role="presentation">
-      <div className="modal" role="dialog" aria-modal="true" aria-labelledby="idle-title">
-        <h2 id="idle-title">계속 주문하시겠어요?</h2>
-        <p className="muted">
-          <strong className="big-num">{left}</strong>초 뒤에 처음 화면으로 돌아갑니다.
+    <div className="dim" role="presentation">
+      <div className="dialog" role="alertdialog" aria-modal="true" aria-labelledby="idle-title" aria-describedby="idle-desc">
+        <h2 id="idle-title" className="dialog-title">주문 시간이 지났습니다</h2>
+        <p id="idle-desc" className="dialog-text">
+          계속 주문하시려면 <b>시간 연장</b>을 눌러 주세요.<br />
+          <b className="num">{left}</b>초 뒤 처음 화면으로 돌아갑니다.
         </p>
-        <div className="modal-actions">
-          <button type="button" className="btn ghost" onClick={onTimeout}>처음으로</button>
-          <button type="button" className="btn primary" onClick={onContinue} autoFocus>계속 주문하기</button>
+        <div className="dialog-actions">
+          <button type="button" className="btn btn-gray" onClick={onTimeout}>처음으로</button>
+          <button type="button" className="btn btn-main" onClick={onContinue} autoFocus>시간 연장</button>
         </div>
       </div>
     </div>

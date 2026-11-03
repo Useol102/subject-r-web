@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { CompletedOrder } from '../App'
-import { formatOrderNumber, formatWon, lineTotal, optionLabel } from '../cart'
+import { formatOrderNumber, formatWon } from '../cart'
+import { METHOD_NAME } from './PayScreen'
 
 interface Props {
   order: CompletedOrder
@@ -10,9 +11,7 @@ interface Props {
 /** 완료 화면이 떠 있다가 처음으로 돌아가기까지의 시간(초) */
 const RETURN_S = 20
 
-const METHOD_NAME = { card: '카드 결제', qr: '간편결제', cash: '현금 결제' } as const
-
-/** 주문 완료 화면. 주문번호를 크게 보여주고 일정 시간 뒤 처음으로 돌아간다 */
+/** 주문 완료 화면. 주문번호를 가장 크게 보여준다 */
 export default function DoneScreen({ order, onHome }: Props) {
   const [left, setLeft] = useState(RETURN_S)
   useEffect(() => {
@@ -24,49 +23,38 @@ export default function DoneScreen({ order, onHome }: Props) {
     return () => window.clearTimeout(t)
   }, [left, onHome])
 
-  const time = order.paidAt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+  const count = order.lines.reduce((n, l) => n + l.qty, 0)
+  const cash = order.method === 'cash'
 
   return (
-    <main className="done">
-      <div className="done-card">
-        <div className="done-check" aria-hidden="true">✓</div>
-        <h1>주문이 완료되었어요</h1>
-        <p className="muted">주문번호가 전광판에 뜨면 픽업대로 와 주세요</p>
-
-        <div className="order-no-box">
-          <span className="order-no-label">주문번호</span>
-          <span className="order-no">{formatOrderNumber(order.number)}</span>
+    <div className="screen">
+      <header className="hdr">
+        <div className="hdr-side" />
+        <h1 className="hdr-title">주문 완료</h1>
+        <div className="hdr-side" />
+      </header>
+      <main className="body done-body">
+        <p className="done-lead">{cash ? '주문이 접수되었습니다' : '결제가 완료되었습니다'}</p>
+        <div className="ticket">
+          <span className="ticket-label">주문번호</span>
+          <span className="ticket-no num">{formatOrderNumber(order.number)}</span>
         </div>
-
-        <dl className="done-meta">
-          <div><dt>이용</dt><dd>{order.dineType === 'store' ? '매장' : '포장'}</dd></div>
-          <div><dt>결제</dt><dd>{METHOD_NAME[order.method]}</dd></div>
-          <div><dt>시각</dt><dd>{time}</dd></div>
+        <p className="done-guide">
+          {cash
+            ? '이 번호를 카운터에 말씀하시고 결제해 주세요.'
+            : '주문번호가 화면에 나오면 픽업대에서 받아 가세요.'}
+        </p>
+        <dl className="done-info">
+          <div><dt>드시는 곳</dt><dd>{order.dineType === 'store' ? '매장' : '포장'}</dd></div>
+          <div><dt>주문 수량</dt><dd><span className="num">{count}</span>개</dd></div>
+          <div><dt>결제 방식</dt><dd>{METHOD_NAME[order.method]}</dd></div>
+          <div><dt>{cash ? '결제할 금액' : '결제 금액'}</dt><dd className="num">{formatWon(order.total)}</dd></div>
         </dl>
-
-        <ul className="summary-list compact">
-          {order.lines.map((l) => (
-            <li key={l.key}>
-              <span className="summary-name">
-                {l.item.name}
-                {optionLabel(l) && <span className="summary-opt"> {optionLabel(l)}</span>}
-              </span>
-              <span className="summary-qty">× {l.qty}</span>
-              <span className="summary-price">{formatWon(lineTotal(l))}</span>
-            </li>
-          ))}
-        </ul>
-        <div className="summary-total">
-          <span>결제 금액</span>
-          <strong>{formatWon(order.total)}</strong>
-        </div>
-
-        {order.method === 'cash' && <p className="notice">현금 결제는 카운터에서 주문번호를 말씀해 주세요.</p>}
-
-        <button type="button" className="btn primary xl" onClick={onHome}>
-          처음으로 ({left}초)
-        </button>
-      </div>
-    </main>
+      </main>
+      <footer className="foot">
+        <span className="foot-note"><b className="num">{left}</b>초 뒤 처음 화면으로 돌아갑니다.</span>
+        <button type="button" className="btn btn-main btn-xl" onClick={onHome}>확인</button>
+      </footer>
+    </div>
   )
 }

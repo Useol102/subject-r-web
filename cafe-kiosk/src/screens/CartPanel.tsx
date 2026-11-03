@@ -1,63 +1,66 @@
-import { formatWon, lineTotal, optionLabel, type CartLine, type CartTotals } from '../cart'
+import { useEffect, useRef } from 'react'
+import { cartTotals, formatWon, lineTotal, optionLabel, type CartLine } from '../cart'
 
 interface Props {
   lines: CartLine[]
-  totals: CartTotals
-  /** 좁은 화면에서 목록을 펼쳤는지 */
-  open: boolean
-  onToggle: () => void
+  /** 방금 담은 줄의 키. 그 줄을 잠깐 강조하고 보이게 스크롤한다 */
+  highlightKey: string | null
   onChangeQty: (key: string, delta: number) => void
   onRemove: (key: string) => void
   onClear: () => void
-  onCheckout: () => void
+  onNext: () => void
 }
 
-/** 장바구니. 넓은 화면에선 오른쪽 세로 패널, 좁은 화면에선 아래 바 + 펼침 목록 */
-export default function CartPanel({ lines, totals, open, onToggle, onChangeQty, onRemove, onClear, onCheckout }: Props) {
+/** 화면 아래 주문 내역. 실제 키오스크처럼 목록 + 합계 + 주문하기 버튼 */
+export default function CartPanel({ lines, highlightKey, onChangeQty, onRemove, onClear, onNext }: Props) {
+  const totals = cartTotals(lines)
   const empty = lines.length === 0
-  return (
-    <aside className={`cart${open ? ' open' : ''}`} aria-label="장바구니">
-      <button type="button" className="cart-handle" onClick={onToggle} aria-expanded={open}>
-        <span>🧺 장바구니 <strong>{totals.count}</strong></span>
-        <span className="cart-handle-total">{formatWon(totals.total)}</span>
-        <span className="chev" aria-hidden="true">{open ? '▼' : '▲'}</span>
-      </button>
+  const listRef = useRef<HTMLOListElement>(null)
 
-      <div className="cart-head">
-        <h2>장바구니</h2>
-        {!empty && (
-          <button type="button" className="btn ghost small" onClick={onClear}>전체 삭제</button>
+  useEffect(() => {
+    if (!highlightKey || !listRef.current) return
+    const el = listRef.current.querySelector<HTMLElement>(`[data-key="${CSS.escape(highlightKey)}"]`)
+    el?.scrollIntoView({ block: 'nearest' })
+  }, [highlightKey, lines])
+
+  return (
+    <aside className="cart" aria-label="주문 내역">
+      <div className="cart-main">
+        <div className="cart-head">
+          <h2 className="cart-title">주문 내역 <span className="num">{totals.count}</span>개</h2>
+          <button type="button" className="btn-text" onClick={onClear} disabled={empty}>전체 삭제</button>
+        </div>
+        {empty ? (
+          <p className="cart-empty">위에서 메뉴를 눌러 주세요</p>
+        ) : (
+          <ol className="cart-list" ref={listRef}>
+            {lines.map((l) => (
+              <li key={l.key} data-key={l.key} className={`cart-row${l.key === highlightKey ? ' hl' : ''}`}>
+                <span className="cart-name">
+                  {l.item.name}
+                  {optionLabel(l) && <span className="cart-opt">{optionLabel(l)}</span>}
+                </span>
+                <span className="qty">
+                  <button type="button" aria-label={`${l.item.name} 한 개 빼기`} onClick={() => onChangeQty(l.key, -1)}>−</button>
+                  <span className="qty-num">{l.qty}</span>
+                  <button type="button" aria-label={`${l.item.name} 한 개 더하기`} onClick={() => onChangeQty(l.key, 1)}>+</button>
+                </span>
+                <span className="cart-price">{formatWon(lineTotal(l))}</span>
+                <button type="button" className="btn-del" aria-label={`${l.item.name} 삭제`} onClick={() => onRemove(l.key)}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+                </button>
+              </li>
+            ))}
+          </ol>
         )}
       </div>
-
-      <ul className="cart-list">
-        {empty && <li className="cart-empty">메뉴를 눌러 담아 주세요</li>}
-        {lines.map((l) => (
-          <li key={l.key} className="cart-line">
-            <div className="cart-line-info">
-              <span className="cart-line-name">{l.item.emoji} {l.item.name}</span>
-              {optionLabel(l) && <span className="cart-line-opt">{optionLabel(l)}</span>}
-              <span className="cart-line-price">{formatWon(lineTotal(l))}</span>
-            </div>
-            <div className="cart-line-ctl">
-              <div className="stepper">
-                <button type="button" aria-label={`${l.item.name} 수량 줄이기`} onClick={() => onChangeQty(l.key, -1)}>−</button>
-                <span className="stepper-num">{l.qty}</span>
-                <button type="button" aria-label={`${l.item.name} 수량 늘리기`} onClick={() => onChangeQty(l.key, 1)}>+</button>
-              </div>
-              <button type="button" className="btn-x" aria-label={`${l.item.name} 삭제`} onClick={() => onRemove(l.key)}>✕</button>
-            </div>
-          </li>
-        ))}
-      </ul>
-
-      <div className="cart-foot">
-        <div className="cart-total-row">
-          <span>총 {totals.count}개</span>
-          <strong className="cart-total">{formatWon(totals.total)}</strong>
+      <div className="cart-side">
+        <div className="cart-sum">
+          <span>총 금액</span>
+          <strong className="num">{formatWon(totals.total)}</strong>
         </div>
-        <button type="button" className="btn primary xl" disabled={empty} onClick={onCheckout}>
-          {empty ? '메뉴를 담아 주세요' : `${formatWon(totals.total)} 주문하기`}
+        <button type="button" className="btn btn-main btn-xl" disabled={empty} onClick={onNext}>
+          주문하기
         </button>
       </div>
     </aside>

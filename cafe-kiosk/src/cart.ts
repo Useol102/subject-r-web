@@ -76,7 +76,7 @@ export function formatWon(n: number): string {
 export function optionLabel(opts: LineOptions): string {
   const parts: string[] = []
   if (opts.temperature) parts.push(opts.temperature)
-  if (opts.size) parts.push(opts.size === 'L' ? '라지' : '기본')
+  if (opts.size) parts.push(opts.size === 'L' ? '크게' : '기본')
   return parts.join(' · ')
 }
 
