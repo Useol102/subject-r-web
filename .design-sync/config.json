@@ -1,0 +1,13 @@
+{
+  "projectId": "4bfa0231-6059-4154-b235-086375addd2a",
+  "shape": "package",
+  "pkg": "subject-r-web",
+  "globalName": "SubjectRWeb",
+  "entry": "./web/node_modules/.ds-tokens-entry.mjs",
+  "cssEntry": "src/styles.css",
+  "runtimeFontPrefixes": [
+    "Apple SD Gothic Neo",
+    "Malgun Gothic"
+  ],
+  "readmeHeader": ".design-sync/conventions.md"
+}

@@ -12,3 +12,9 @@ dist/
 output/
 # 직원 화면 비밀번호. 저장소에 올리지 않는다.
 web-admin-key.txt
+# design-sync 작업 파일 (매번 다시 만든다)
+.ds-sync/
+ds-bundle/
+.design-sync/.cache/
+.design-sync/learnings/
+.design-sync/node_modules
