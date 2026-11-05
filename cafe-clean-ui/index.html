@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f5f7">
+  <title>카페 주문 연습</title>
+  <link rel="preload" href="./assets/fonts/PretendardVariable.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="./assets/index-DNhmxk91.css">
+  <link rel="stylesheet" href="./clean-ui.css">
+  <script defer src="./assets/index-yXYbrbKE.js"></script>
+  <script defer src="./ui-enhancements.js"></script>
+</head>
+<body>
+  <header class="app-heading"><span class="app-name">카페 주문 연습</span><span class="education">교육용 화면 · 실제 결제 없음</span></header>
+  <nav class="flow" id="flow" aria-label="주문 진행 단계" hidden>
+    <ol><li data-stage="menu"><span class="flow-number">1</span><span>메뉴 선택</span></li><li data-stage="confirm"><span class="flow-number">2</span><span>주문 확인</span></li><li data-stage="pay"><span class="flow-number">3</span><span>결제 방식</span></li><li data-stage="done"><span class="flow-number">4</span><span>주문 완료</span></li></ol>
+    <p id="flow-help"></p>
+  </nav>
+  <div id="root"></div>
+  <p id="ui-feedback" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
+</body>
+</html>
