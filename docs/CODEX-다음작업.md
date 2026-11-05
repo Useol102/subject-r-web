@@ -110,7 +110,6 @@ npm --prefix web install
 | 프로그램 / 회차(`program_session`) 분리 | `web_api/models.py` |
 | 회차 반복 생성 · 휴강 처리 | `web/src/recurrence.ts`, `web/src/Admin.tsx` |
 | 시각 문자열 형식 통일 (`iso_z`) | `web_api/models.py` |
-| 현행 ERD (테이블 6개) | `docs/ERD-현행.dbml` |
 | 태블릿·모바일 터치 화면 대응 | `web/src/styles.css` 끝부분 |
 | 고령층용 글씨 굵기 (`:root` 600 / 본문 700) | `web/src/styles.css` 끝부분 |
 | PR 자동 검사 (GitHub Actions) | `.github/workflows/web-verify.yml` |
