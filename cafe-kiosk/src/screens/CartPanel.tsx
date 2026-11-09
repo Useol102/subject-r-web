@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { cartTotals, formatWon, lineTotal, optionLabel, type CartLine } from '../cart'
 
 interface Props {
@@ -16,6 +16,13 @@ export default function CartPanel({ lines, highlightKey, onChangeQty, onRemove, 
   const totals = cartTotals(lines)
   const empty = lines.length === 0
   const listRef = useRef<HTMLOListElement>(null)
+  // 총 금액이 바뀌면 화면 읽기 프로그램에 알린다 (처음 그릴 때는 알리지 않는다)
+  const [announce, setAnnounce] = useState('')
+  const prevTotal = useRef(totals.total)
+  useEffect(() => {
+    if (prevTotal.current !== totals.total) setAnnounce(`담은 메뉴의 총 금액은 ${formatWon(totals.total)}입니다.`)
+    prevTotal.current = totals.total
+  }, [totals.total])
 
   useEffect(() => {
     if (!highlightKey || !listRef.current) return
@@ -31,7 +38,7 @@ export default function CartPanel({ lines, highlightKey, onChangeQty, onRemove, 
           <button type="button" className="btn-text" onClick={onClear} disabled={empty}>전체 삭제</button>
         </div>
         {empty ? (
-          <p className="cart-empty">위에서 메뉴를 눌러 주세요</p>
+          <p className="cart-empty">메뉴를 선택하면 이곳에 담겨요.</p>
         ) : (
           <ol className="cart-list" ref={listRef}>
             {lines.map((l) => (
@@ -60,9 +67,10 @@ export default function CartPanel({ lines, highlightKey, onChangeQty, onRemove, 
           <strong className="num">{formatWon(totals.total)}</strong>
         </div>
         <button type="button" className="btn btn-main btn-xl" disabled={empty} onClick={onNext}>
-          주문하기
+          주문 확인하기
         </button>
       </div>
+      <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">{announce}</p>
     </aside>
   )
 }

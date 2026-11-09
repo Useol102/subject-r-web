@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { cartTotals, formatWon, type CartLine } from '../cart'
 import Header from './Header'
+import { useDialogA11y } from '../useDialogA11y'
 
 export type PayMethod = 'card' | 'qr' | 'cash'
 
@@ -71,19 +72,25 @@ export default function PayScreen({ lines, timeLeft, paying, onPayingChange, onB
         <span className="foot-note">교육용 연습 화면입니다. 실제로 결제되지 않습니다.</span>
       </footer>
 
-      {paying && (
-        <div className="dim" role="presentation">
-          <div className="dialog pay-dialog" role="alertdialog" aria-modal="true" aria-labelledby="pay-title" aria-describedby="pay-desc">
-            <PayGuideArt method={method} />
-            <h2 id="pay-title" className="dialog-title">{GUIDE[method].title}</h2>
-            <p id="pay-desc" className="dialog-text">{GUIDE[method].text}</p>
-            <div className="progress" aria-hidden="true"><span /></div>
-            <div className="dialog-actions">
-              <button type="button" className="btn btn-gray" onClick={() => onPayingChange(false)}>결제 취소</button>
-            </div>
-          </div>
+      {paying && <PayDialog method={method} onCancel={() => onPayingChange(false)} />}
+    </div>
+  )
+}
+
+/** 결제 안내 창. Esc = 결제 취소 */
+function PayDialog({ method, onCancel }: { method: PayMethod; onCancel: () => void }) {
+  const boxRef = useDialogA11y<HTMLDivElement>(onCancel)
+  return (
+    <div className="dim" role="presentation">
+      <div className="dialog pay-dialog" ref={boxRef} role="alertdialog" aria-modal="true" aria-labelledby="pay-title" aria-describedby="pay-desc">
+        <PayGuideArt method={method} />
+        <h2 id="pay-title" className="dialog-title">{GUIDE[method].title}</h2>
+        <p id="pay-desc" className="dialog-text">{GUIDE[method].text}</p>
+        <div className="progress" aria-hidden="true"><span /></div>
+        <div className="dialog-actions">
+          <button type="button" className="btn btn-gray" onClick={onCancel}>결제 취소</button>
         </div>
-      )}
+      </div>
     </div>
   )
 }
@@ -103,7 +110,7 @@ function PayGuideArt({ method }: { method: PayMethod }) {
           <rect x="40" y="70" width="120" height="40" rx="6" fill="#374151" />
           <rect x="62" y="80" width="76" height="6" rx="3" fill="#111827" />
           <g className="guide-move">
-            <rect x="70" y="10" width="60" height="76" rx="6" fill="#1E3A6E" />
+            <rect x="70" y="10" width="60" height="76" rx="6" fill="#0066CC" />
             <rect x="80" y="20" width="14" height="10" rx="2" fill="#F2C94C" />
           </g>
         </g>
@@ -126,7 +133,7 @@ function PayGuideArt({ method }: { method: PayMethod }) {
         <g>
           <rect x="30" y="64" width="140" height="46" rx="6" fill="#374151" />
           <rect x="30" y="56" width="140" height="12" rx="4" fill="#4B5563" />
-          <circle cx="100" cy="30" r="18" fill="#1E3A6E" />
+          <circle cx="100" cy="30" r="18" fill="#0066CC" />
           <text x="100" y="37" textAnchor="middle" fontSize="20" fontWeight="700" fill="#FFFFFF">번호</text>
         </g>
       )}

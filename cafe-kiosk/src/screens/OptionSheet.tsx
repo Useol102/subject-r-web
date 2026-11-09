@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { defaultOptions, formatWon, MAX_QTY, unitPrice, type LineOptions, type Size, type Temperature } from '../cart'
 import { LARGE_EXTRA, type MenuItem } from '../menu'
 import MenuArt from './MenuArt'
+import { useDialogA11y } from '../useDialogA11y'
 
 interface Props {
   item: MenuItem
@@ -13,6 +14,8 @@ interface Props {
 export default function OptionSheet({ item, onCancel, onConfirm }: Props) {
   const [opts, setOpts] = useState<LineOptions>(() => defaultOptions(item))
   const [qty, setQty] = useState(1)
+  // Esc = 취소, Tab 은 창 안에서만 돈다
+  const boxRef = useDialogA11y<HTMLDivElement>(onCancel)
 
   const setTemp = (temperature: Temperature) => setOpts((o) => ({ ...o, temperature }))
   const setSize = (size: Size) => setOpts((o) => ({ ...o, size }))
@@ -20,7 +23,7 @@ export default function OptionSheet({ item, onCancel, onConfirm }: Props) {
 
   return (
     <div className="dim" role="presentation">
-      <div className="dialog option" role="dialog" aria-modal="true" aria-labelledby="opt-title">
+      <div className="dialog option" ref={boxRef} role="dialog" aria-modal="true" aria-labelledby="opt-title">
         <div className="option-head">
           <span className="option-art"><MenuArt item={item} /></span>
           <div>

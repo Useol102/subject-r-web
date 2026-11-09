@@ -34,15 +34,15 @@ export default function DoneScreen({ order, onHome }: Props) {
         <div className="hdr-side" />
       </header>
       <main className="body done-body">
-        <p className="done-lead">{cash ? '주문이 접수되었습니다' : '결제가 완료되었습니다'}</p>
+        <p className="done-lead">주문 연습을 마쳤어요</p>
         <div className="ticket">
-          <span className="ticket-label">주문번호</span>
+          <span className="ticket-label">연습 주문번호</span>
           <span className="ticket-no num">{formatOrderNumber(order.number)}</span>
         </div>
         <p className="done-guide">
           {cash
-            ? '이 번호를 카운터에 말씀하시고 결제해 주세요.'
-            : '주문번호가 화면에 나오면 픽업대에서 받아 가세요.'}
+            ? '실제 매장에서는 이 번호를 카운터에 말하고 결제해요. 확인을 누르면 처음부터 다시 연습할 수 있어요.'
+            : '확인을 누르면 처음부터 다시 연습할 수 있어요.'}
         </p>
         <dl className="done-info">
           <div><dt>드시는 곳</dt><dd>{order.dineType === 'store' ? '매장' : '포장'}</dd></div>

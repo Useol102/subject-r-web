@@ -1,7 +1,9 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { addToCart, cartTotals, changeQty, nextOrderNumber, removeLine, type CartLine, type LineOptions } from './cart'
 import type { MenuItem } from './menu'
 import { useCountdown } from './useCountdown'
+import { pageTitle, type Screen } from './flow'
+import { AppHeading, FlowBar } from './screens/FlowBar'
 import StartScreen from './screens/StartScreen'
 import MenuScreen from './screens/MenuScreen'
 import ConfirmScreen from './screens/ConfirmScreen'
@@ -9,8 +11,7 @@ import PayScreen, { type PayMethod } from './screens/PayScreen'
 import DoneScreen from './screens/DoneScreen'
 import IdleDialog from './screens/IdleDialog'
 
-/** 화면 흐름: 시작 → 메뉴 선택 → 주문 확인 → 결제 방식 선택 → 주문 완료 → 시작 */
-type Screen = 'start' | 'menu' | 'confirm' | 'pay' | 'done'
+/* 화면 흐름: 시작 → 메뉴 선택 → 주문 확인 → 결제 방식 선택 → 주문 완료 → 시작 (Screen 은 flow.ts) */
 export type DineType = 'store' | 'togo'
 
 /** 주문 중 화면의 제한 시간. 조작하면 다시 처음부터 센다 */
@@ -35,6 +36,17 @@ export default function App() {
   const [order, setOrder] = useState<CompletedOrder | null>(null)
   const [idleWarning, setIdleWarning] = useState(false)
   const [paying, setPaying] = useState(false)
+  const kioskRef = useRef<HTMLDivElement>(null)
+
+  // 화면이 바뀌면 탭 제목을 바꾸고, 화면 제목으로 포커스를 옮긴다 (화면 읽기 프로그램이 새 화면을 읽도록)
+  useEffect(() => {
+    document.title = pageTitle(screen)
+    const title = kioskRef.current?.querySelector<HTMLElement>('.hdr-title, .start-title')
+    if (title) {
+      title.tabIndex = -1
+      title.focus({ preventScroll: true })
+    }
+  }, [screen])
 
   const reset = useCallback(() => {
     setLines([])
@@ -69,7 +81,9 @@ export default function App() {
   }
 
   return (
-    <div className="kiosk" data-screen={screen}>
+    <div className="kiosk" data-screen={screen} ref={kioskRef}>
+      <AppHeading />
+      <FlowBar screen={screen} />
       {screen === 'start' && <StartScreen onStart={start} />}
       {screen === 'menu' && (
         <MenuScreen

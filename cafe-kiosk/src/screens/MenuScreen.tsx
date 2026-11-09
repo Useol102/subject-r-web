@@ -74,6 +74,7 @@ export default function MenuScreen({ dineType, lines, timeLeft, onAdd, onChangeQ
               </span>
               <span className="product-name">{item.name}</span>
               <span className="product-price">{formatWon(item.price)}</span>
+              <span className="product-cta" aria-hidden="true">{item.soldOut ? '품절' : '선택하기'}</span>
               {item.iceOnly && <span className="product-tag">ICE만 가능</span>}
               {item.hotOnly && <span className="product-tag hot">HOT만 가능</span>}
             </button>
